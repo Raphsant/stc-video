@@ -10,9 +10,9 @@ export default defineNuxtConfig({
         options: {},
     },
     runtimeConfig: {
-        awsRegion: process.env.AWS_REGION,
-        awsAccessKeyId: process.env.AWS_ACCESS_KEY_ID,
-        awsSecretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+        awsRegion: process.env.MY_AWS_REGION,
+        awsAccessKeyId: process.env.MY_AWS_ACCESS_KEY_ID,
+        awsSecretAccessKey: process.env.MY_AWS_SECRET_ACCESS_KEY,
         s3Bucket: process.env.S3_BUCKET,
         oauth: {
             discord: {
