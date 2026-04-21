@@ -1,0 +1,63 @@
+@import "tailwindcss";
+@import "@nuxt/ui";
+
+@theme {
+    /* Cream palette for light mode surfaces */
+    --color-cream-50: #fefcf9;
+    --color-cream-100: #faf6ef;
+    --color-cream-200: #f0eae0;
+    --color-cream-300: #e5ddd0;
+    --color-cream-400: #d4c9b8;
+    --color-cream-500: #bdb0a0;
+}
+
+/* Light mode: Claude-style creamy orange (readable on cream bg) */
+:root {
+    --color-primary-50:  #fdf5ef;
+    --color-primary-100: #fae5d0;
+    --color-primary-200: #f5c9a0;
+    --color-primary-300: #eca46a;
+    --color-primary-400: #e07848;
+    --color-primary-500: #c75e30;
+    --color-primary-600: #a44822;
+    --color-primary-700: #80381a;
+    --color-primary-800: #592712;
+    --color-primary-900: #38190b;
+    --color-primary-950: #1e0d05;
+}
+
+/* Dark mode: golden yellow primary */
+.dark {
+    --color-primary-50:  #fdf8ec;
+    --color-primary-100: #f9edcc;
+    --color-primary-200: #f3d98b;
+    --color-primary-300: #ecc354;
+    --color-primary-400: #e5b63d;
+    --color-primary-500: #ddaa33;
+    --color-primary-600: #b08929;
+    --color-primary-700: #876820;
+    --color-primary-800: #5d4716;
+    --color-primary-900: #3c2d0d;
+    --color-primary-950: #221a07;
+}
+
+/* Page transitions */
+.page-enter-active,
+.page-leave-active {
+    transition: all 0.25s ease-out;
+}
+.page-enter-from,
+.page-leave-to {
+    opacity: 0;
+    transform: translateY(8px);
+}
+
+/* Layout transitions */
+.layout-enter-active,
+.layout-leave-active {
+    transition: all 0.25s;
+}
+.layout-enter-from,
+.layout-leave-to {
+    opacity: 0;
+}

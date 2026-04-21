@@ -1,6 +1,7 @@
 <script setup>
 import 'vidstack/player/styles/default/theme.css'
 import 'vidstack/bundle'
+import 'vidstack/icons';
 
 defineProps({
   src: String,
@@ -9,9 +10,10 @@ defineProps({
 </script>
 
 <template>
-  <media-player :title="title" :src="src" class="w-full rounded" preload="metadata">
-    <ClientOnly>
+  <ClientOnly>
+    <media-player :title="title" :src="src" class="w-full rounded" preload="metadata">
       <media-provider></media-provider>
-    </ClientOnly>
-  </media-player>
+      <media-video-layout></media-video-layout>
+    </media-player>
+  </ClientOnly>
 </template>
