@@ -41,7 +41,7 @@ export default defineEventHandler(async (event) => {
         key: obj.Key,
         name: fileName.replace(/\.[^/.]+$/, ''),
         size: obj.Size,
-        url: `https://${config.public.cloudfrontDomain}/${obj.Key}`,
+        url: signVideoUrl(obj.Key, config),
       }
 
       const list = groups.get(folder) ?? []

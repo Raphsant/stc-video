@@ -14,6 +14,9 @@ export default defineNuxtConfig({
         awsAccessKeyId: process.env.MY_AWS_ACCESS_KEY_ID,
         awsSecretAccessKey: process.env.MY_AWS_SECRET_ACCESS_KEY,
         s3Bucket: process.env.S3_BUCKET,
+        cloudfrontKeyPairId: process.env.CLOUDFRONT_KEY_PAIR_ID,
+        cloudfrontPrivateKey: process.env.CLOUDFRONT_PRIVATE_KEY,
+        cloudfrontPrivateKeyPath: process.env.CLOUDFRONT_PRIVATE_KEY_PATH,
         oauth: {
             discord: {
                 clientId: '',

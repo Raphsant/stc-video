@@ -36,7 +36,7 @@ export default defineEventHandler(async (event) => {
       key: obj.Key!,
       name: obj.Key!.slice(prefix.length).replace(/\.[^/.]+$/, ''),
       size: obj.Size,
-      url: `https://${config.public.cloudfrontDomain}/${obj.Key}`,
+      url: signVideoUrl(obj.Key!, config),
     }))
 
   return { prefix, folders, videos }

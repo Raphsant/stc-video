@@ -22,7 +22,7 @@ export default defineEventHandler(async (event) => {
       key,
       name: key.replace(/\.[^/.]+$/, ''),
       size: result.ContentLength,
-      url: `https://${config.public.cloudfrontDomain}/${key}`
+      url: signVideoUrl(key, config)
     }
   } catch (err: any) {
     if (err?.name === 'NotFound' || err?.$metadata?.httpStatusCode === 404) {
