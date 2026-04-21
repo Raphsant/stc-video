@@ -3,16 +3,34 @@ import { readFileSync } from 'node:fs'
 
 let cachedKey: string | null = null
 
+function normalizePem(raw: string): string {
+  // Unescape literal \n sequences from env var storage
+  const pem = raw.replace(/\\n/g, '\n').trim()
+  const header = pem.match(/-----BEGIN ([^-]+)-----/)
+  const footer = pem.match(/-----END ([^-]+)-----/)
+  if (!header || !footer) return pem
+
+  const type = header[1]
+  const body = pem
+    .replace(`-----BEGIN ${type}-----`, '')
+    .replace(`-----END ${type}-----`, '')
+    .replace(/\s+/g, '') // strip all whitespace so we can reformat cleanly
+
+  // OpenSSL 3 requires exactly 64 chars per line in the base64 body
+  const lines = (body.match(/.{1,64}/g) ?? []).join('\n')
+  return `-----BEGIN ${type}-----\n${lines}\n-----END ${type}-----`
+}
+
 function loadPrivateKey(config: ReturnType<typeof useRuntimeConfig>): string {
   if (cachedKey) return cachedKey
 
   if (config.cloudfrontPrivateKey) {
-    cachedKey = (config.cloudfrontPrivateKey as string).replace(/\\n/g, '\n')
+    cachedKey = normalizePem(config.cloudfrontPrivateKey as string)
     return cachedKey
   }
 
   if (config.cloudfrontPrivateKeyPath) {
-    cachedKey = readFileSync(config.cloudfrontPrivateKeyPath as string, 'utf-8')
+    cachedKey = normalizePem(readFileSync(config.cloudfrontPrivateKeyPath as string, 'utf-8'))
     return cachedKey
   }
 
