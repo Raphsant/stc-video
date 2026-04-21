@@ -5,7 +5,7 @@ const key = decodeURIComponent(route.params.key as string)
 const { data: video, error } = await useFetch(`/api/videos/${encodeURIComponent(key)}`)
 
 if (error.value) {
-  throw createError({ statusCode: 404, statusMessage: 'Video not found' })
+  throw createError({ statusCode: 404, statusMessage: 'Video no encontrado' })
 }
 
 useSeoMeta({ title: () => video.value?.name ?? 'Video' })
@@ -21,7 +21,7 @@ const backTo = computed(() =>
     : '/'
 )
 const backLabel = computed(() =>
-  parentFolder.value ? parentFolder.value.split('/').pop()! : 'Home'
+  parentFolder.value ? parentFolder.value.split('/').pop()! : 'Inicio'
 )
 
 function formatBytes(bytes?: number) {
@@ -38,7 +38,7 @@ function formatBytes(bytes?: number) {
       variant="ghost"
       color="neutral"
       icon="i-lucide-arrow-left"
-      :label="`Back to ${backLabel}`"
+      :label="`Volver a ${backLabel}`"
       class="mb-6 -ml-2"
     />
 

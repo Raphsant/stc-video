@@ -35,23 +35,23 @@ function formatSize(bytes?: number) {
       <div class="absolute -bottom-24 -left-16 w-72 h-72 bg-fuchsia-500/10 rounded-full blur-3xl pointer-events-none" />
 
       <div class="relative max-w-2xl">
-        <UBadge color="primary" variant="soft" label="STC Members" icon="i-lucide-sparkles" class="mb-4" />
+        <UBadge color="primary" variant="soft" label="Miembros STC" icon="i-lucide-sparkles" class="mb-4" />
         <h1 class="text-3xl sm:text-4xl font-bold tracking-tight mb-3">
-          Welcome back<span v-if="user">, <span class="text-yellow-400">{{ user.username }}</span></span>.
+          Bienvenido de nuevo<span v-if="user">, <span class="text-yellow-400">{{ user.username }}</span></span>.
         </h1>
         <p class="text-gray-600 dark:text-gray-400 text-base sm:text-lg max-w-xl mb-6">
-          Your curated collection of exclusive clips, streams and unreleased content — straight from the community.
+          Tu colección de sesiones de zoom y contenido inédito — directo de STC.
         </p>
 
         <div class="flex flex-col sm:flex-row gap-3 max-w-xl">
           <UInput
             v-model="search"
-            placeholder="Search folders and videos…"
+            placeholder="Buscar carpetas y videos…"
             icon="i-lucide-search"
             size="lg"
             class="flex-1"
           />
-          <UButton to="/all" color="neutral" variant="subtle" size="lg" icon="i-lucide-list" label="View all" />
+          <UButton to="/all" color="neutral" variant="subtle" size="lg" icon="i-lucide-list" label="Ver todo" />
         </div>
       </div>
     </section>
@@ -66,7 +66,7 @@ function formatSize(bytes?: number) {
       <section v-if="filteredFolders.length" class="mb-12">
         <div class="flex items-center gap-2 mb-4">
           <UIcon name="i-lucide-folder" class="text-yellow-400" />
-          <h2 class="text-lg font-semibold">Collections</h2>
+          <h2 class="text-lg font-semibold">Colecciones</h2>
           <UBadge color="neutral" variant="subtle" :label="String(filteredFolders.length)" />
         </div>
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -92,7 +92,7 @@ function formatSize(bytes?: number) {
       <section v-if="featured && !search" class="mb-12">
         <div class="flex items-center gap-2 mb-4">
           <UIcon name="i-lucide-flame" class="text-yellow-400" />
-          <h2 class="text-lg font-semibold">Featured</h2>
+          <h2 class="text-lg font-semibold">Destacado</h2>
         </div>
         <NuxtLink
           :to="`/videos/${encodeURIComponent(featured.key)}`"
@@ -108,10 +108,10 @@ function formatSize(bytes?: number) {
           <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
           <div class="absolute bottom-0 left-0 right-0 p-6 sm:p-8 flex items-end justify-between gap-4">
             <div class="min-w-0">
-              <p class="text-xs uppercase tracking-widest text-yellow-400 mb-1">Now showing</p>
+              <p class="text-xs uppercase tracking-widest text-yellow-400 mb-1">En pantalla</p>
               <h3 class="text-white text-2xl sm:text-3xl font-bold truncate">{{ featured.name }}</h3>
             </div>
-            <UButton color="primary" icon="i-lucide-play" label="Watch" size="lg" class="shrink-0 shadow-lg" />
+            <UButton color="primary" icon="i-lucide-play" label="Ver" size="lg" class="shrink-0 shadow-lg" />
           </div>
         </NuxtLink>
       </section>
@@ -120,7 +120,7 @@ function formatSize(bytes?: number) {
       <section v-if="filteredVideos.length">
         <div class="flex items-center gap-2 mb-4">
           <UIcon name="i-lucide-film" class="text-gray-400" />
-          <h2 class="text-lg font-semibold">Recent</h2>
+          <h2 class="text-lg font-semibold">Reciente</h2>
           <UBadge color="neutral" variant="subtle" :label="String(filteredVideos.length)" />
         </div>
 
@@ -166,7 +166,7 @@ function formatSize(bytes?: number) {
         class="flex flex-col items-center justify-center py-24 text-gray-400 gap-3"
       >
         <UIcon name="i-lucide-video-off" class="w-12 h-12" />
-        <p class="text-sm">{{ search ? 'Nothing matches your search.' : 'No videos available yet.' }}</p>
+        <p class="text-sm">{{ search ? 'Nada coincide con tu búsqueda.' : 'Aún no hay videos disponibles.' }}</p>
       </div>
     </template>
   </div>

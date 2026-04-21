@@ -10,7 +10,7 @@ const segments = computed(() => {
 })
 
 const prefix = computed(() => (segments.value.length ? segments.value.join('/') + '/' : ''))
-const currentName = computed(() => segments.value[segments.value.length - 1] ?? 'Collections')
+const currentName = computed(() => segments.value[segments.value.length - 1] ?? 'Colecciones')
 
 const { data, pending } = await useFetch('/api/videos', {
   query: { prefix },
@@ -23,7 +23,7 @@ const folders = computed(() => data.value?.folders ?? [])
 const videos = computed(() => data.value?.videos ?? [])
 
 const crumbs = computed(() => {
-  const out: { label: string; to: string }[] = [{ label: 'Home', to: '/' }]
+  const out: { label: string; to: string }[] = [{ label: 'Inicio', to: '/' }]
   let acc = ''
   for (const seg of segments.value) {
     acc = acc ? `${acc}/${encodeURIComponent(seg)}` : encodeURIComponent(seg)
@@ -64,7 +64,7 @@ function formatSize(bytes?: number) {
         <div class="min-w-0">
           <h1 class="text-2xl sm:text-3xl font-bold truncate">{{ currentName }}</h1>
           <p class="text-sm text-gray-500 dark:text-gray-400">
-            {{ folders.length }} {{ folders.length === 1 ? 'subfolder' : 'subfolders' }} ·
+            {{ folders.length }} {{ folders.length === 1 ? 'subcarpeta' : 'subcarpetas' }} ·
             {{ videos.length }} {{ videos.length === 1 ? 'video' : 'videos' }}
           </p>
         </div>
@@ -80,7 +80,7 @@ function formatSize(bytes?: number) {
       <!-- Subfolders -->
       <section v-if="folders.length" class="mb-10">
         <h2 class="text-sm font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-3">
-          Subfolders
+          Subcarpetas
         </h2>
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           <NuxtLink
@@ -147,7 +147,7 @@ function formatSize(bytes?: number) {
         class="flex flex-col items-center justify-center py-24 text-gray-400 gap-3"
       >
         <UIcon name="i-lucide-folder-x" class="w-12 h-12" />
-        <p class="text-sm">This folder is empty.</p>
+        <p class="text-sm">Esta carpeta está vacía.</p>
       </div>
     </template>
   </div>

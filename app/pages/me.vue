@@ -1,7 +1,7 @@
 <script setup lang="ts">
 const { user, clear: clearSession } = useUserSession()
 
-useSeoMeta({ title: 'Profile' })
+useSeoMeta({ title: 'Perfil' })
 
 const avatarUrl = computed(() => {
   if (!user.value?.id) return undefined
@@ -50,13 +50,13 @@ async function logout() {
         />
       </div>
       <p v-else class="text-sm text-gray-500 dark:text-gray-400">
-        You don't have any roles assigned.
+        No tienes roles asignados.
       </p>
     </section>
 
     <div class="flex flex-wrap gap-3">
-      <UButton to="/" variant="ghost" color="neutral" icon="i-lucide-arrow-left" label="Back home" />
-      <UButton color="error" variant="soft" icon="i-lucide-log-out" label="Logout" @click="logout" />
+      <UButton to="/" variant="ghost" color="neutral" icon="i-lucide-arrow-left" label="Volver al inicio" />
+      <UButton color="error" variant="soft" icon="i-lucide-log-out" label="Cerrar sesión" @click="logout" />
     </div>
   </div>
 </template>

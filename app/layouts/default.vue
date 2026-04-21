@@ -37,8 +37,8 @@ async function logout() {
 
           <!-- Desktop right side -->
           <div class="hidden sm:flex items-center gap-3">
-            <UButton to="/" variant="ghost" color="neutral" icon="i-lucide-home" label="Home" />
-            <UButton to="/all" variant="ghost" color="neutral" icon="i-lucide-list" label="All" />
+            <UButton to="/" variant="ghost" color="neutral" icon="i-lucide-home" label="Inicio" />
+            <UButton to="/all" variant="ghost" color="neutral" icon="i-lucide-list" label="Todo" />
             <UColorModeButton />
             <template v-if="loggedIn">
               <NuxtLink
@@ -61,7 +61,7 @@ async function logout() {
               external
               color="primary"
               icon="i-lucide-log-in"
-              label="Login"
+              label="Iniciar sesión"
             />
           </div>
 
@@ -93,7 +93,7 @@ async function logout() {
             variant="ghost"
             color="neutral"
             icon="i-lucide-home"
-            label="Home"
+            label="Inicio"
             block
             class="justify-start"
             @click="mobileMenuOpen = false"
@@ -103,7 +103,7 @@ async function logout() {
             variant="ghost"
             color="neutral"
             icon="i-lucide-list"
-            label="All videos"
+            label="Todos los videos"
             block
             class="justify-start"
             @click="mobileMenuOpen = false"
@@ -114,7 +114,7 @@ async function logout() {
             variant="ghost"
             color="neutral"
             icon="i-lucide-user"
-            :label="`Profile (${user?.username})`"
+            :label="`Perfil (${user?.username})`"
             block
             class="justify-start"
             @click="mobileMenuOpen = false"
@@ -124,7 +124,7 @@ async function logout() {
             variant="ghost"
             color="neutral"
             icon="i-lucide-log-out"
-            label="Logout"
+            label="Cerrar sesión"
             block
             class="justify-start"
             @click="() => { mobileMenuOpen = false; logout() }"
@@ -136,7 +136,7 @@ async function logout() {
             variant="ghost"
             color="primary"
             icon="i-lucide-log-in"
-            label="Login with Discord"
+            label="Iniciar sesión con Discord"
             block
             class="justify-start"
           />

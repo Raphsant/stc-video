@@ -10,7 +10,7 @@ export default defineOAuthDiscordEventHandler({
     if (!record) {
       throw createError({
         statusCode: 403,
-        message: 'Your Discord account is not authorized to access this site.',
+        message: 'Tu cuenta de Discord no está autorizada para acceder a este sitio.',
       })
     }
 

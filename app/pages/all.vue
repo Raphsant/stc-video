@@ -1,5 +1,5 @@
 <script setup lang="ts">
-useSeoMeta({ title: 'All videos' })
+useSeoMeta({ title: 'Todos los videos' })
 
 const { data, pending } = await useFetch('/api/videos/all')
 
@@ -33,7 +33,7 @@ function folderLink(folder: string) {
 }
 
 function folderLabel(folder: string) {
-  return folder === '' ? 'Root' : folder
+  return folder === '' ? 'Raíz' : folder
 }
 </script>
 
@@ -42,18 +42,18 @@ function folderLabel(folder: string) {
     <!-- Header -->
     <header class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-8">
       <div>
-        <h1 class="text-3xl font-bold tracking-tight mb-2">All videos</h1>
+        <h1 class="text-3xl font-bold tracking-tight mb-2">Todos los videos</h1>
         <p class="text-sm text-gray-500 dark:text-gray-400">
-          <span v-if="pending">Loading…</span>
+          <span v-if="pending">Cargando…</span>
           <span v-else>
-            {{ filteredTotal }} of {{ data?.total ?? 0 }} videos
-            across {{ filteredGroups.length }} {{ filteredGroups.length === 1 ? 'folder' : 'folders' }}
+            {{ filteredTotal }} de {{ data?.total ?? 0 }} videos
+            en {{ filteredGroups.length }} {{ filteredGroups.length === 1 ? 'carpeta' : 'carpetas' }}
           </span>
         </p>
       </div>
       <UInput
         v-model="search"
-        placeholder="Search all videos…"
+        placeholder="Buscar todos los videos…"
         icon="i-lucide-search"
         size="lg"
         class="w-full sm:w-80"
@@ -76,7 +76,7 @@ function folderLabel(folder: string) {
       class="flex flex-col items-center justify-center py-24 text-gray-400 gap-3"
     >
       <UIcon name="i-lucide-video-off" class="w-12 h-12" />
-      <p class="text-sm">{{ search ? 'Nothing matches your search.' : 'No videos available yet.' }}</p>
+      <p class="text-sm">{{ search ? 'Nada coincide con tu búsqueda.' : 'Aún no hay videos disponibles.' }}</p>
     </div>
 
     <!-- Groups -->
@@ -96,7 +96,7 @@ function folderLabel(folder: string) {
             :to="folderLink(group.folder)"
             class="text-sm text-gray-500 dark:text-gray-400 hover:text-yellow-400 transition flex items-center gap-1 shrink-0"
           >
-            <span>Open folder</span>
+            <span>Abrir carpeta</span>
             <UIcon name="i-lucide-arrow-right" class="w-4 h-4" />
           </NuxtLink>
         </div>
