@@ -31,12 +31,13 @@ export default defineEventHandler(async (event) => {
     }))
 
   const videos = (result.Contents ?? [])
-    .filter(obj => obj.Key && !obj.Key.endsWith('/') && (obj.Size ?? 0) > 0)
+    .filter(obj => obj.Key && !obj.Key.endsWith('/') && !obj.Key.endsWith('.jpg') && (obj.Size ?? 0) > 0)
     .map(obj => ({
       key: obj.Key!,
       name: obj.Key!.slice(prefix.length).replace(/\.[^/.]+$/, ''),
       size: obj.Size,
       url: signVideoUrl(obj.Key!, config),
+      thumb: signVideoUrl(`${obj.Key!}.jpg`, config),
     }))
 
   return { prefix, folders, videos }

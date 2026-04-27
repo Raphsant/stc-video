@@ -1,24 +1,29 @@
 <script setup lang="ts">
 const { user } = useUserSession()
-const { data, pending } = await useFetch('/api/videos')
+const { data: rootData, pending: rootPending } = await useFetch('/api/videos')
+const { data: previewData, pending: previewPending } = await useFetch('/api/videos/previews')
+const { progressMap } = useVideoProgress()
 
 const search = ref('')
 
-const folders = computed(() => data.value?.folders ?? [])
-const videos = computed(() => data.value?.videos ?? [])
+const rootVideos = computed(() => rootData.value?.videos ?? [])
+const folders = computed(() => previewData.value?.folders ?? [])
+
+const pending = computed(() => rootPending.value || previewPending.value)
 
 const filteredFolders = computed(() => {
   const q = search.value.trim().toLowerCase()
   if (!q) return folders.value
   return folders.value.filter(f => f.name.toLowerCase().includes(q))
 })
-const filteredVideos = computed(() => {
+
+const filteredRootVideos = computed(() => {
   const q = search.value.trim().toLowerCase()
-  if (!q) return videos.value
-  return videos.value.filter(v => v.name.toLowerCase().includes(q))
+  if (!q) return rootVideos.value
+  return rootVideos.value.filter(v => v.name.toLowerCase().includes(q))
 })
 
-const featured = computed(() => videos.value[0])
+const featured = computed(() => rootVideos.value[0])
 
 function formatSize(bytes?: number) {
   if (!bytes) return ''
@@ -62,32 +67,6 @@ function formatSize(bytes?: number) {
     </div>
 
     <template v-else>
-      <!-- Folders -->
-      <section v-if="filteredFolders.length" class="mb-12">
-        <div class="flex items-center gap-2 mb-4">
-          <UIcon name="i-lucide-folder" class="text-yellow-400" />
-          <h2 class="text-lg font-semibold">Colecciones</h2>
-          <UBadge color="neutral" variant="subtle" :label="String(filteredFolders.length)" />
-        </div>
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          <NuxtLink
-            v-for="folder in filteredFolders"
-            :key="folder.prefix"
-            :to="`/folders/${folder.prefix.replace(/\/$/, '').split('/').map(encodeURIComponent).join('/')}`"
-            class="group relative overflow-hidden rounded-2xl border border-gray-200 dark:border-gray-800 bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-950 p-5 flex items-center gap-4 transition hover:border-yellow-400/60 hover:-translate-y-0.5"
-          >
-            <div class="w-12 h-12 rounded-xl bg-yellow-400/15 text-yellow-500 grid place-items-center shrink-0 group-hover:bg-yellow-400/25 transition">
-              <UIcon name="i-lucide-folder" class="w-6 h-6" />
-            </div>
-            <div class="min-w-0 flex-1">
-              <p class="font-semibold truncate group-hover:text-yellow-400 transition">{{ folder.name }}</p>
-              <p class="text-xs text-gray-500 dark:text-gray-400 font-mono truncate">{{ folder.prefix }}</p>
-            </div>
-            <UIcon name="i-lucide-arrow-right" class="text-gray-400 group-hover:text-yellow-400 shrink-0 transition" />
-          </NuxtLink>
-        </div>
-      </section>
-
       <!-- Featured -->
       <section v-if="featured && !search" class="mb-12">
         <div class="flex items-center gap-2 mb-4">
@@ -98,12 +77,10 @@ function formatSize(bytes?: number) {
           :to="`/videos/${encodeURIComponent(featured.key)}`"
           class="group block relative overflow-hidden rounded-2xl border border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-900 aspect-[16/7]"
         >
-          <video
-            :src="featured.url"
+          <img
+            :src="featured.thumb"
             class="absolute inset-0 w-full h-full object-cover opacity-90 group-hover:opacity-100 transition"
-            muted
-            playsinline
-            preload="metadata"
+            alt=""
           />
           <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
           <div class="absolute bottom-0 left-0 right-0 p-6 sm:p-8 flex items-end justify-between gap-4">
@@ -116,28 +93,77 @@ function formatSize(bytes?: number) {
         </NuxtLink>
       </section>
 
+      <!-- Folders with video previews -->
+      <section v-if="filteredFolders.length" class="mb-12 space-y-10">
+        <div v-for="folder in filteredFolders" :key="folder.prefix">
+          <div class="flex items-center justify-between gap-2 mb-4">
+            <div class="flex items-center gap-2">
+              <UIcon name="i-lucide-folder" class="text-yellow-400" />
+              <h2 class="text-lg font-semibold">{{ folder.name }}</h2>
+            </div>
+            <NuxtLink
+              :to="`/folders/${folder.prefix.replace(/\/$/, '').split('/').map(encodeURIComponent).join('/')}`"
+              class="text-sm text-gray-500 hover:text-yellow-400 transition flex items-center gap-1"
+            >
+              Ver todo <UIcon name="i-lucide-arrow-right" class="w-4 h-4" />
+            </NuxtLink>
+          </div>
+
+          <!-- Video previews row -->
+          <div v-if="folder.recentVideos.length" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+            <NuxtLink
+              v-for="video in folder.recentVideos"
+              :key="video.key"
+              :to="`/videos/${encodeURIComponent(video.key)}`"
+              class="group relative overflow-hidden rounded-xl border border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-900 transition hover:border-yellow-400/60 hover:-translate-y-0.5"
+            >
+              <div class="relative aspect-video overflow-hidden bg-black">
+                <img
+                  :src="video.thumb"
+                  class="absolute inset-0 w-full h-full object-cover opacity-80 group-hover:opacity-100 transition"
+                  alt=""
+                />
+                <div class="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
+                <div class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition">
+                  <div class="w-10 h-10 rounded-full bg-yellow-400 text-black grid place-items-center shadow-xl">
+                    <UIcon name="i-lucide-play" class="w-5 h-5" />
+                  </div>
+                </div>
+                <div v-if="progressMap[video.key]" class="absolute bottom-0 left-0 right-0 h-1 bg-white/20">
+                  <div class="h-full bg-yellow-400" :style="{ width: progressMap[video.key] + '%' }" />
+                </div>
+              </div>
+              <div class="p-2">
+                <p class="text-xs font-medium truncate group-hover:text-yellow-400 transition">{{ video.name }}</p>
+              </div>
+            </NuxtLink>
+          </div>
+
+          <!-- Empty folder -->
+          <p v-else class="text-sm text-gray-400">Sin videos aún.</p>
+        </div>
+      </section>
+
       <!-- Root videos -->
-      <section v-if="filteredVideos.length">
+      <section v-if="filteredRootVideos.length">
         <div class="flex items-center gap-2 mb-4">
           <UIcon name="i-lucide-film" class="text-gray-400" />
           <h2 class="text-lg font-semibold">Reciente</h2>
-          <UBadge color="neutral" variant="subtle" :label="String(filteredVideos.length)" />
+          <UBadge color="neutral" variant="subtle" :label="String(filteredRootVideos.length)" />
         </div>
 
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           <NuxtLink
-            v-for="video in filteredVideos"
+            v-for="video in filteredRootVideos"
             :key="video.key"
             :to="`/videos/${encodeURIComponent(video.key)}`"
             class="group relative overflow-hidden rounded-2xl border border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-900 transition hover:border-yellow-400/60 hover:-translate-y-0.5"
           >
             <div class="relative aspect-video overflow-hidden bg-black">
-              <video
-                :src="video.url"
+              <img
+                :src="video.thumb"
                 class="absolute inset-0 w-full h-full object-cover opacity-80 group-hover:opacity-100 transition"
-                muted
-                playsinline
-                preload="metadata"
+                alt=""
               />
               <div class="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
               <div class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition">
@@ -152,6 +178,9 @@ function formatSize(bytes?: number) {
                 :label="formatSize(video.size)"
                 class="absolute top-3 right-3 bg-black/60 text-white backdrop-blur"
               />
+              <div v-if="progressMap[video.key]" class="absolute bottom-0 left-0 right-0 h-1 bg-white/20">
+                <div class="h-full bg-yellow-400" :style="{ width: progressMap[video.key] + '%' }" />
+              </div>
             </div>
             <div class="p-4">
               <p class="font-semibold truncate group-hover:text-yellow-400 transition">{{ video.name }}</p>
@@ -162,7 +191,7 @@ function formatSize(bytes?: number) {
 
       <!-- Empty -->
       <div
-        v-if="!filteredFolders.length && !filteredVideos.length"
+        v-if="!filteredFolders.length && !filteredRootVideos.length"
         class="flex flex-col items-center justify-center py-24 text-gray-400 gap-3"
       >
         <UIcon name="i-lucide-video-off" class="w-12 h-12" />

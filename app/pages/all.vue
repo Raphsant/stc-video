@@ -2,6 +2,7 @@
 useSeoMeta({ title: 'Todos los videos' })
 
 const { data, pending } = await useFetch('/api/videos/all')
+const { progressMap } = useVideoProgress()
 
 const search = ref('')
 
@@ -18,7 +19,7 @@ const filteredGroups = computed(() => {
 })
 
 const filteredTotal = computed(() =>
-  filteredGroups.value.reduce((n, g) => n + g.videos.length, 0)
+  filteredGroups.value.reduce((n, g) => n + g.count, 0)
 )
 
 function formatSize(bytes?: number) {
@@ -89,7 +90,7 @@ function folderLabel(folder: string) {
               class="text-yellow-400 shrink-0"
             />
             <h2 class="text-lg font-semibold truncate">{{ folderLabel(group.folder) }}</h2>
-            <UBadge color="neutral" variant="subtle" :label="String(group.videos.length)" />
+            <UBadge color="neutral" variant="subtle" :label="String(group.count)" />
           </div>
           <NuxtLink
             v-if="group.folder"
@@ -109,12 +110,10 @@ function folderLabel(folder: string) {
             class="group relative overflow-hidden rounded-2xl border border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-900 transition hover:border-yellow-400/60 hover:-translate-y-0.5"
           >
             <div class="relative aspect-video overflow-hidden bg-black">
-              <video
-                :src="video.url"
+              <img
+                :src="video.thumb"
                 class="absolute inset-0 w-full h-full object-cover opacity-80 group-hover:opacity-100 transition"
-                muted
-                playsinline
-                preload="metadata"
+                alt=""
               />
               <div class="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
               <div class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition">
@@ -129,6 +128,9 @@ function folderLabel(folder: string) {
                 :label="formatSize(video.size)"
                 class="absolute top-3 right-3 bg-black/60 text-white backdrop-blur"
               />
+              <div v-if="progressMap[video.key]" class="absolute bottom-0 left-0 right-0 h-1 bg-white/20">
+                <div class="h-full bg-yellow-400" :style="{ width: progressMap[video.key] + '%' }" />
+              </div>
             </div>
             <div class="p-4">
               <p class="font-semibold truncate group-hover:text-yellow-400 transition">{{ video.name }}</p>

@@ -16,6 +16,7 @@ const { data, pending } = await useFetch('/api/videos', {
   query: { prefix },
   watch: [prefix],
 })
+const { progressMap } = useVideoProgress()
 
 useSeoMeta({ title: () => currentName.value })
 
@@ -113,12 +114,10 @@ function formatSize(bytes?: number) {
             class="group relative overflow-hidden rounded-2xl border border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-900 transition hover:border-yellow-400/60 hover:-translate-y-0.5"
           >
             <div class="relative aspect-video overflow-hidden bg-black">
-              <video
-                :src="video.url"
+              <img
+                :src="video.thumb"
                 class="absolute inset-0 w-full h-full object-cover opacity-80 group-hover:opacity-100 transition"
-                muted
-                playsinline
-                preload="metadata"
+                alt=""
               />
               <div class="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
               <div class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition">
@@ -133,6 +132,9 @@ function formatSize(bytes?: number) {
                 :label="formatSize(video.size)"
                 class="absolute top-3 right-3 bg-black/60 text-white backdrop-blur"
               />
+              <div v-if="progressMap[video.key]" class="absolute bottom-0 left-0 right-0 h-1 bg-white/20">
+                <div class="h-full bg-yellow-400" :style="{ width: progressMap[video.key] + '%' }" />
+              </div>
             </div>
             <div class="p-4">
               <p class="font-semibold truncate group-hover:text-yellow-400 transition">{{ video.name }}</p>

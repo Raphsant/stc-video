@@ -43,7 +43,7 @@ function formatBytes(bytes?: number) {
     />
 
     <div class="rounded-xl overflow-hidden shadow-lg bg-black mb-6">
-      <VideoPlayer :src="video!.url" :title="video!.name" />
+      <VideoPlayer :src="video!.url" :title="video!.name" :video-key="key" />
     </div>
 
     <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
