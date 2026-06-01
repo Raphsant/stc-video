@@ -1,5 +1,7 @@
 import { ListObjectsV2Command, S3Client } from '@aws-sdk/client-s3'
 
+const VIDEO_EXT = /\.(mp4|mov|m4v|mkv|webm|avi)$/i
+
 type VideoEntry = {
   key: string
   name: string
@@ -31,10 +33,13 @@ export default defineEventHandler(async (event) => {
     )
 
     for (const obj of result.Contents ?? []) {
-      if (!obj.Key || obj.Key.endsWith('/') || obj.Key.endsWith('.jpg') || !obj.Size) continue
+      if (!obj.Key || !obj.Size) continue
+      if (obj.Key.startsWith('bitacora/')) continue
+      if (!VIDEO_EXT.test(obj.Key)) continue
 
+      const firstSlash = obj.Key.indexOf('/')
+      const folder = firstSlash === -1 ? '' : obj.Key.slice(0, firstSlash)
       const lastSlash = obj.Key.lastIndexOf('/')
-      const folder = lastSlash === -1 ? '' : obj.Key.slice(0, lastSlash)
       const fileName = lastSlash === -1 ? obj.Key : obj.Key.slice(lastSlash + 1)
 
       const video: VideoEntry = {
@@ -55,7 +60,11 @@ export default defineEventHandler(async (event) => {
   const groupEntries = Array.from(groups.entries())
     .sort(([a], [b]) => a.localeCompare(b))
     .map(([folder, videos]) => {
-      const sorted = videos.sort((a, b) => (b.lastModified ?? 0) - (a.lastModified ?? 0))
+      const sorted = videos.sort((a, b) => {
+        const da = parseVideoDate(a.name) ?? a.lastModified ?? 0
+        const db = parseVideoDate(b.name) ?? b.lastModified ?? 0
+        return db - da
+      })
       const preview = sorted.slice(0, 5).map(({ lastModified: _, ...v }) => ({
         ...v,
         url: signVideoUrl(v.key, config),

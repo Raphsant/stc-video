@@ -19,7 +19,7 @@ function videoName(key: string) {
 }
 
 function videoLink(key: string) {
-  return '/videos/' + key.split('/').map(encodeURIComponent).join('/')
+  return `/videos/${encodeURIComponent(key)}`
 }
 
 const avatarUrl = computed(() => {

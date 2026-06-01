@@ -1,5 +1,7 @@
 import { ListObjectsV2Command, S3Client } from '@aws-sdk/client-s3'
 
+const VIDEO_EXT = /\.(mp4|mov|m4v|mkv|webm|avi)$/i
+
 export default defineEventHandler(async (event) => {
   await requireUserSession(event)
 
@@ -23,7 +25,7 @@ export default defineEventHandler(async (event) => {
 
   const folderPrefixes = (rootResult.CommonPrefixes ?? [])
     .map(p => p.Prefix)
-    .filter((p): p is string => !!p)
+    .filter((p): p is string => !!p && !p.startsWith('bitacora/'))
 
   const folders = await Promise.all(
     folderPrefixes.map(async prefix => {
@@ -37,16 +39,22 @@ export default defineEventHandler(async (event) => {
       )
 
       const recentVideos = (folderResult.Contents ?? [])
-        .filter(obj => obj.Key && !obj.Key.endsWith('/') && !obj.Key.endsWith('.jpg') && (obj.Size ?? 0) > 0)
-        .sort((a, b) => (b.LastModified?.getTime() ?? 0) - (a.LastModified?.getTime() ?? 0))
-        .slice(0, 5)
+        .filter(obj => obj.Key && VIDEO_EXT.test(obj.Key) && (obj.Size ?? 0) > 0)
         .map(obj => ({
           key: obj.Key!,
           name: obj.Key!.slice(prefix.length).replace(/\.[^/.]+$/, ''),
           size: obj.Size,
+          lastModified: obj.LastModified?.getTime(),
           url: signVideoUrl(obj.Key!, config),
           thumb: signVideoUrl(`${obj.Key!}.jpg`, config),
         }))
+        .sort((a, b) => {
+          const da = parseVideoDate(a.name) ?? a.lastModified ?? 0
+          const db = parseVideoDate(b.name) ?? b.lastModified ?? 0
+          return db - da
+        })
+        .slice(0, 5)
+        .map(({ lastModified: _, ...v }) => v)
 
       return { prefix, name, recentVideos }
     })
