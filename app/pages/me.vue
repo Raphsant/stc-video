@@ -3,6 +3,8 @@ const { user, clear: clearSession } = useUserSession()
 
 useSeoMeta({ title: 'Perfil' })
 
+const tier = computed(() => tierMeta(resolveGroup(user.value?.roles)))
+
 const { data: history } = await useFetch('/api/progress/history')
 
 function formatTimestamp(seconds: number) {
@@ -51,6 +53,25 @@ async function logout() {
         </div>
       </div>
     </div>
+
+    <section class="mb-8">
+      <div class="flex items-center gap-2 mb-3">
+        <UIcon name="i-lucide-badge-check" class="text-yellow-400" />
+        <h2 class="text-lg font-semibold">Plan</h2>
+      </div>
+      <div class="flex items-center gap-4 rounded-xl border border-gray-200 dark:border-gray-800 p-4">
+        <div class="w-11 h-11 rounded-xl bg-yellow-400/15 text-yellow-500 grid place-items-center shrink-0">
+          <UIcon :name="tier.icon" class="w-5 h-5" />
+        </div>
+        <div class="min-w-0 flex-1">
+          <div class="flex items-center gap-2">
+            <span class="font-semibold">{{ tier.label }}</span>
+            <UBadge :color="tier.color" variant="subtle" :label="tier.label" />
+          </div>
+          <p class="text-sm text-gray-500 dark:text-gray-400">{{ tier.description }}</p>
+        </div>
+      </div>
+    </section>
 
     <section class="mb-8">
       <div class="flex items-center gap-2 mb-3">

@@ -4,6 +4,8 @@ useSeoMeta({ title: 'Todos los videos' })
 const { data, pending } = await useFetch('/api/videos/all')
 const { progressMap } = useVideoProgress()
 
+const NuxtLink = resolveComponent('NuxtLink')
+
 const search = ref('')
 
 const filteredGroups = computed(() => {
@@ -103,20 +105,27 @@ function folderLabel(folder: string) {
         </div>
 
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          <NuxtLink
+          <component
+            :is="video.locked ? 'div' : NuxtLink"
             v-for="video in group.videos"
             :key="video.key"
-            :to="`/videos/${encodeURIComponent(video.key)}`"
-            class="group relative overflow-hidden rounded-2xl border border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-900 transition hover:border-yellow-400/60 hover:-translate-y-0.5"
+            :to="video.locked ? null : `/videos/${encodeURIComponent(video.key)}`"
+            class="group relative overflow-hidden rounded-2xl border border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-900 transition"
+            :class="video.locked ? 'cursor-default opacity-60' : 'hover:border-yellow-400/60 hover:-translate-y-0.5'"
           >
             <div class="relative aspect-video overflow-hidden bg-black">
               <img
                 :src="video.thumb"
-                class="absolute inset-0 w-full h-full object-cover opacity-80 group-hover:opacity-100 transition"
+                class="absolute inset-0 w-full h-full object-cover transition"
+                :class="video.locked ? 'opacity-40 blur-[1px]' : 'opacity-80 group-hover:opacity-100'"
                 alt=""
               />
               <div class="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
-              <div class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition">
+              <div v-if="video.locked" class="absolute inset-0 flex flex-col items-center justify-center gap-1">
+                <UIcon name="i-lucide-lock" class="w-6 h-6 text-yellow-400" />
+                <span class="text-[10px] font-semibold uppercase tracking-wide text-white">{{ lockLabel(video.lockReason) }}</span>
+              </div>
+              <div v-else class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition">
                 <div class="w-14 h-14 rounded-full bg-yellow-400 text-black grid place-items-center shadow-xl">
                   <UIcon name="i-lucide-play" class="w-6 h-6" />
                 </div>
@@ -135,7 +144,7 @@ function folderLabel(folder: string) {
             <div class="p-4">
               <p class="font-semibold truncate group-hover:text-yellow-400 transition">{{ video.name }}</p>
             </div>
-          </NuxtLink>
+          </component>
         </div>
       </section>
     </template>

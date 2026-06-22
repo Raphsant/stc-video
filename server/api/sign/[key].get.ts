@@ -1,7 +1,40 @@
-export default defineEventHandler(async (event) => {
-  await requireUserSession(event)
-  const config = useRuntimeConfig()
-  const { key } = getRouterParams(event)
+import { HeadObjectCommand, S3Client } from '@aws-sdk/client-s3'
 
-  return { url: signVideoUrl(decodeURIComponent(key), config) }
+export default defineEventHandler(async (event) => {
+  const { user } = await requireUserSession(event)
+  const config = useRuntimeConfig()
+  const key = decodeURIComponent(getRouterParam(event, 'key') ?? '')
+  if (!key) throw createError({ statusCode: 400, message: 'Clave de video faltante' })
+
+  const group = resolveGroup(user.roles)
+
+  const s3 = new S3Client({
+    region: config.awsRegion,
+    credentials: {
+      accessKeyId: config.awsAccessKeyId,
+      secretAccessKey: config.awsSecretAccessKey,
+    },
+  })
+
+  let uploadedAt: number | null = null
+  try {
+    const head = await s3.send(new HeadObjectCommand({ Bucket: config.s3Bucket, Key: key }))
+    uploadedAt = head.LastModified?.getTime() ?? null
+  } catch (err: any) {
+    if (err?.name === 'NotFound' || err?.$metadata?.httpStatusCode === 404) {
+      throw createError({ statusCode: 404, message: 'Video no encontrado' })
+    }
+    throw createError({ statusCode: 500, message: 'Error al obtener el video' })
+  }
+
+  const decision = checkVideoAccess({ group, key, uploadedAt })
+  if (!decision.allowed) {
+    throw createError({
+      statusCode: 403,
+      message: 'No tienes acceso a este video',
+      data: { reason: decision.reason },
+    })
+  }
+
+  return { url: signVideoUrl(key, config) }
 })

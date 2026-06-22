@@ -1,7 +1,7 @@
 import { HeadObjectCommand, S3Client } from '@aws-sdk/client-s3'
 
 export default defineEventHandler(async (event) => {
-  await requireUserSession(event)
+  const { user } = await requireUserSession(event)
   const key = decodeURIComponent(getRouterParam(event, 'key') ?? '')
   if (!key) throw createError({ statusCode: 400, message: 'Clave de video faltante' })
 
@@ -18,11 +18,20 @@ export default defineEventHandler(async (event) => {
     const result = await s3.send(
       new HeadObjectCommand({ Bucket: config.s3Bucket, Key: key })
     )
+
+    const group = resolveGroup(user.roles)
+    const decision = checkVideoAccess({ group, key, uploadedAt: result.LastModified?.getTime() ?? null })
+
+    const override = (await getDisplayNames([key])).get(key)
+
     return {
       key,
-      name: key.replace(/\.[^/.]+$/, ''),
+      name: override ?? key.replace(/\.[^/.]+$/, ''),
       size: result.ContentLength,
-      url: signVideoUrl(key, config)
+      thumb: signVideoUrl(`${key}.jpg`, config),
+      url: decision.allowed ? signVideoUrl(key, config) : null,
+      locked: !decision.allowed,
+      lockReason: decision.reason ?? null,
     }
   } catch (err: any) {
     if (err?.name === 'NotFound' || err?.$metadata?.httpStatusCode === 404) {

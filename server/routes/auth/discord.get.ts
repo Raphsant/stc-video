@@ -16,9 +16,11 @@ export default defineOAuthDiscordEventHandler({
 
     await setUserSession(event, {
       user: {
-        id: record._id,
-        username: record.username,
-        roles: record.roles,
+        // Coerce: nuxt-mongoose's .lean() types these as the schema
+        // constructors (String/[String]) rather than string/string[].
+        id: String(record._id),
+        username: String(record.username),
+        roles: (record.roles ?? []).map(String),
       },
     })
 

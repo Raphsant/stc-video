@@ -1,0 +1,30 @@
+# Dependencies (reinstalled inside the image)
+node_modules
+
+# Nuxt dev/build outputs (rebuilt inside the image)
+.output
+.nuxt
+.nitro
+.cache
+.data
+dist
+
+# Secrets — must never be baked into the image.
+# CloudFront key is provided at runtime via CLOUDFRONT_PRIVATE_KEY.
+*.pem
+.env
+.env.*
+!.env.example
+
+# Version control / editor / OS cruft
+.git
+.gitignore
+.idea
+.fleet
+.DS_Store
+
+# Docs & local tooling not needed at runtime
+README.md
+CLAUDE.md
+.claude
+.github

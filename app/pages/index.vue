@@ -4,6 +4,8 @@ const { data: rootData, pending: rootPending } = await useFetch('/api/videos')
 const { data: previewData, pending: previewPending } = await useFetch('/api/videos/previews')
 const { progressMap } = useVideoProgress()
 
+const NuxtLink = resolveComponent('NuxtLink')
+
 const search = ref('')
 
 const rootVideos = computed(() => rootData.value?.videos ?? [])
@@ -39,7 +41,7 @@ function formatSize(bytes?: number) {
       <div class="absolute -top-20 -right-20 w-72 h-72 bg-yellow-400/10 rounded-full blur-3xl pointer-events-none" />
       <div class="absolute -bottom-24 -left-16 w-72 h-72 bg-fuchsia-500/10 rounded-full blur-3xl pointer-events-none" />
 
-      <div class="relative max-w-2xl">
+      <div class="relative max-w-2xl">yarn
         <UBadge color="primary" variant="soft" label="Miembros STC" icon="i-lucide-sparkles" class="mb-4" />
         <h1 class="text-3xl sm:text-4xl font-bold tracking-tight mb-3">
           Bienvenido de nuevo<span v-if="user">, <span class="text-yellow-400">{{ user.username }}</span></span>.
@@ -73,13 +75,16 @@ function formatSize(bytes?: number) {
           <UIcon name="i-lucide-flame" class="text-yellow-400" />
           <h2 class="text-lg font-semibold">Destacado</h2>
         </div>
-        <NuxtLink
-          :to="`/videos/${encodeURIComponent(featured.key)}`"
+        <component
+          :is="featured.locked ? 'div' : NuxtLink"
+          :to="featured.locked ? null : `/videos/${encodeURIComponent(featured.key)}`"
           class="group block relative overflow-hidden rounded-2xl border border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-900 aspect-[16/7]"
+          :class="{ 'cursor-default': featured.locked }"
         >
           <img
             :src="featured.thumb"
-            class="absolute inset-0 w-full h-full object-cover opacity-90 group-hover:opacity-100 transition"
+            class="absolute inset-0 w-full h-full object-cover transition"
+            :class="featured.locked ? 'opacity-30 blur-sm' : 'opacity-90 group-hover:opacity-100'"
             alt=""
           />
           <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
@@ -88,9 +93,18 @@ function formatSize(bytes?: number) {
               <p class="text-xs uppercase tracking-widest text-yellow-400 mb-1">En pantalla</p>
               <h3 class="text-white text-2xl sm:text-3xl font-bold truncate">{{ featured.name }}</h3>
             </div>
-            <UButton color="primary" icon="i-lucide-play" label="Ver" size="lg" class="shrink-0 shadow-lg" />
+            <UButton
+              v-if="featured.locked"
+              color="neutral"
+              variant="solid"
+              icon="i-lucide-lock"
+              :label="lockLabel(featured.lockReason)"
+              size="lg"
+              class="shrink-0 shadow-lg bg-black/60 text-yellow-400 backdrop-blur"
+            />
+            <UButton v-else color="primary" icon="i-lucide-play" label="Ver" size="lg" class="shrink-0 shadow-lg" />
           </div>
-        </NuxtLink>
+        </component>
       </section>
 
       <!-- Folders with video previews -->
@@ -111,20 +125,27 @@ function formatSize(bytes?: number) {
 
           <!-- Video previews row -->
           <div v-if="folder.recentVideos.length" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
-            <NuxtLink
+            <component
+              :is="video.locked ? 'div' : NuxtLink"
               v-for="video in folder.recentVideos"
               :key="video.key"
-              :to="`/videos/${encodeURIComponent(video.key)}`"
-              class="group relative overflow-hidden rounded-xl border border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-900 transition hover:border-yellow-400/60 hover:-translate-y-0.5"
+              :to="video.locked ? null : `/videos/${encodeURIComponent(video.key)}`"
+              class="group relative overflow-hidden rounded-xl border border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-900 transition"
+              :class="video.locked ? 'cursor-default opacity-60' : 'hover:border-yellow-400/60 hover:-translate-y-0.5'"
             >
               <div class="relative aspect-video overflow-hidden bg-black">
                 <img
                   :src="video.thumb"
-                  class="absolute inset-0 w-full h-full object-cover opacity-80 group-hover:opacity-100 transition"
+                  class="absolute inset-0 w-full h-full object-cover transition"
+                  :class="video.locked ? 'opacity-40 blur-[1px]' : 'opacity-80 group-hover:opacity-100'"
                   alt=""
                 />
                 <div class="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
-                <div class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition">
+                <div v-if="video.locked" class="absolute inset-0 flex flex-col items-center justify-center gap-1">
+                  <UIcon name="i-lucide-lock" class="w-5 h-5 text-yellow-400" />
+                  <span class="text-[9px] font-semibold uppercase tracking-wide text-white">{{ lockLabel(video.lockReason) }}</span>
+                </div>
+                <div v-else class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition">
                   <div class="w-10 h-10 rounded-full bg-yellow-400 text-black grid place-items-center shadow-xl">
                     <UIcon name="i-lucide-play" class="w-5 h-5" />
                   </div>
@@ -136,7 +157,7 @@ function formatSize(bytes?: number) {
               <div class="p-2">
                 <p class="text-xs font-medium truncate group-hover:text-yellow-400 transition">{{ video.name }}</p>
               </div>
-            </NuxtLink>
+            </component>
           </div>
 
           <!-- Empty folder -->
@@ -153,20 +174,27 @@ function formatSize(bytes?: number) {
         </div>
 
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          <NuxtLink
+          <component
+            :is="video.locked ? 'div' : NuxtLink"
             v-for="video in filteredRootVideos"
             :key="video.key"
-            :to="`/videos/${encodeURIComponent(video.key)}`"
-            class="group relative overflow-hidden rounded-2xl border border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-900 transition hover:border-yellow-400/60 hover:-translate-y-0.5"
+            :to="video.locked ? null : `/videos/${encodeURIComponent(video.key)}`"
+            class="group relative overflow-hidden rounded-2xl border border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-900 transition"
+            :class="video.locked ? 'cursor-default opacity-60' : 'hover:border-yellow-400/60 hover:-translate-y-0.5'"
           >
             <div class="relative aspect-video overflow-hidden bg-black">
               <img
                 :src="video.thumb"
-                class="absolute inset-0 w-full h-full object-cover opacity-80 group-hover:opacity-100 transition"
+                class="absolute inset-0 w-full h-full object-cover transition"
+                :class="video.locked ? 'opacity-40 blur-[1px]' : 'opacity-80 group-hover:opacity-100'"
                 alt=""
               />
               <div class="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
-              <div class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition">
+              <div v-if="video.locked" class="absolute inset-0 flex flex-col items-center justify-center gap-1">
+                <UIcon name="i-lucide-lock" class="w-6 h-6 text-yellow-400" />
+                <span class="text-[10px] font-semibold uppercase tracking-wide text-white">{{ lockLabel(video.lockReason) }}</span>
+              </div>
+              <div v-else class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition">
                 <div class="w-14 h-14 rounded-full bg-yellow-400 text-black grid place-items-center shadow-xl">
                   <UIcon name="i-lucide-play" class="w-6 h-6" />
                 </div>
@@ -185,7 +213,7 @@ function formatSize(bytes?: number) {
             <div class="p-4">
               <p class="font-semibold truncate group-hover:text-yellow-400 transition">{{ video.name }}</p>
             </div>
-          </NuxtLink>
+          </component>
         </div>
       </section>
 

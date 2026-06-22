@@ -10,9 +10,10 @@ type VideoEntry = {
 }
 
 export default defineEventHandler(async (event) => {
-  await requireUserSession(event)
+  const { user } = await requireUserSession(event)
 
   const config = useRuntimeConfig()
+  const group = resolveGroup(user.roles)
   const s3 = new S3Client({
     region: config.awsRegion,
     credentials: {
@@ -57,6 +58,10 @@ export default defineEventHandler(async (event) => {
     ContinuationToken = result.IsTruncated ? result.NextContinuationToken : undefined
   } while (ContinuationToken)
 
+  const overrides = await getDisplayNames(
+    Array.from(groups.values()).flatMap(list => list.map(v => v.key)),
+  )
+
   const groupEntries = Array.from(groups.entries())
     .sort(([a], [b]) => a.localeCompare(b))
     .map(([folder, videos]) => {
@@ -65,11 +70,17 @@ export default defineEventHandler(async (event) => {
         const db = parseVideoDate(b.name) ?? b.lastModified ?? 0
         return db - da
       })
-      const preview = sorted.slice(0, 5).map(({ lastModified: _, ...v }) => ({
-        ...v,
-        url: signVideoUrl(v.key, config),
-        thumb: signVideoUrl(`${v.key}.jpg`, config),
-      }))
+      const preview = sorted.slice(0, 5).map(({ lastModified, ...v }) => {
+        const decision = checkVideoAccess({ group, key: v.key, uploadedAt: lastModified ?? null })
+        return {
+          ...v,
+          name: overrides.get(v.key) ?? v.name,
+          url: decision.allowed ? signVideoUrl(v.key, config) : null,
+          thumb: signVideoUrl(`${v.key}.jpg`, config),
+          locked: !decision.allowed,
+          lockReason: decision.reason ?? null,
+        }
+      })
       return { folder, count: videos.length, videos: preview }
     })
 
