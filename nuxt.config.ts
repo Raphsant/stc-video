@@ -6,14 +6,12 @@ export default defineNuxtConfig({
     devtools: {enabled: true},
     modules: ['@nuxt/ui', 'nuxt-auth-utils', 'nuxt-mongoose'],
     mongoose: {
-        // Local dev reads MONGODB_URI from .env; in Docker the URI is injected at
-        // runtime via NUXT_MONGOOSE_URI (Nuxt maps it onto runtimeConfig.mongoose.uri).
-        // A bare build-time process.env read bakes an empty string into the image.
+        // nuxt-mongoose owns the connection: it auto-connects at server startup
+        // using this uri. Local dev reads MONGODB_URI from .env; in Docker the uri is
+        // injected at runtime via NUXT_MONGOOSE_URI (mapped onto runtimeConfig.mongoose.uri).
         uri: process.env.NUXT_MONGOOSE_URI || process.env.MONGODB_URI || '',
         options: {
-            bufferCommands: false,
             serverSelectionTimeoutMS: 5000,
-            socketTimeoutMS: 10000,
             maxPoolSize: 5,
             minPoolSize: 0,
             heartbeatFrequencyMS: 10000,

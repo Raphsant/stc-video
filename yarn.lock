@@ -5424,7 +5424,7 @@ mongodb@~7.1:
     bson "^7.1.1"
     mongodb-connection-string-url "^7.0.0"
 
-mongoose@^9.0.2, mongoose@^9.5.0:
+mongoose@^9.0.2:
   version "9.5.0"
   resolved "https://registry.yarnpkg.com/mongoose/-/mongoose-9.5.0.tgz#180458f89977ebdf33652deabb6c127373b25ca1"
   integrity sha512-B4blGFkFL1s0G24URuMvx0qTlx+gRVLmfO7WcSz8NcmW/XHEJ3G69capdyW1iRsGKiycp1tkwKHnxHbnwjwmPw==

@@ -14,7 +14,6 @@
     "@aws-sdk/cloudfront-signer": "^3.1034.0",
     "@nuxt/ui": "^4.6.1",
     "media-icons": "^1.1.5",
-    "mongoose": "^9.5.0",
     "nuxt": "^4.4.2",
     "nuxt-auth-utils": "^0.5.29",
     "nuxt-mongoose": "^1.1.2",
