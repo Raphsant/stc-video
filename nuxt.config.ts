@@ -6,8 +6,20 @@ export default defineNuxtConfig({
     devtools: {enabled: true},
     modules: ['@nuxt/ui', 'nuxt-auth-utils', 'nuxt-mongoose'],
     mongoose: {
-        uri: process.env.MONGODB_URI,
-        options: {},
+        // Local dev reads MONGODB_URI from .env; in Docker the URI is injected at
+        // runtime via NUXT_MONGOOSE_URI (Nuxt maps it onto runtimeConfig.mongoose.uri).
+        // A bare build-time process.env read bakes an empty string into the image.
+        uri: process.env.NUXT_MONGOOSE_URI || process.env.MONGODB_URI || '',
+        options: {
+            bufferCommands: false,
+            serverSelectionTimeoutMS: 5000,
+            socketTimeoutMS: 10000,
+            maxPoolSize: 5,
+            minPoolSize: 0,
+            heartbeatFrequencyMS: 10000,
+        },
+        modelsDir: 'models',
+        devtools: true,
     },
     runtimeConfig: {
         awsRegion: process.env.MY_AWS_REGION,
