@@ -6,10 +6,10 @@ export default defineNuxtConfig({
     devtools: {enabled: true},
     modules: ['@nuxt/ui', 'nuxt-auth-utils', 'nuxt-mongoose'],
     mongoose: {
-        // nuxt-mongoose owns the connection: it auto-connects at server startup
-        // using this uri. Local dev reads MONGODB_URI from .env; in Docker the uri is
-        // injected at runtime via NUXT_MONGOOSE_URI (mapped onto runtimeConfig.mongoose.uri).
-        uri: process.env.NUXT_MONGOOSE_URI || process.env.MONGODB_URI || '',
+        // URI is injected at runtime from the NUXT_MONGOOSE_URI env var, which Nuxt
+        // maps onto runtimeConfig.mongoose.uri. Keep this empty — nuxt-mongoose
+        // auto-connects at server startup using the resolved value.
+        uri: '',
         options: {
             serverSelectionTimeoutMS: 5000,
             maxPoolSize: 5,
@@ -19,14 +19,24 @@ export default defineNuxtConfig({
         modelsDir: 'models',
         devtools: true,
     },
+    // Every value is injected at runtime from a NUXT_-prefixed env var. Nuxt maps:
+    //   NUXT_AWS_REGION              -> awsRegion
+    //   NUXT_AWS_ACCESS_KEY_ID       -> awsAccessKeyId
+    //   NUXT_AWS_SECRET_ACCESS_KEY   -> awsSecretAccessKey
+    //   NUXT_S3_BUCKET               -> s3Bucket
+    //   NUXT_CLOUDFRONT_KEY_PAIR_ID  -> cloudfrontKeyPairId
+    //   NUXT_CLOUDFRONT_PRIVATE_KEY  -> cloudfrontPrivateKey
+    //   NUXT_PUBLIC_CLOUDFRONT_DOMAIN-> public.cloudfrontDomain
+    //   NUXT_OAUTH_DISCORD_CLIENT_ID -> oauth.discord.clientId   (etc.)
+    // The keys only need to exist here (empty defaults) for the override to apply.
     runtimeConfig: {
-        awsRegion: process.env.MY_AWS_REGION,
-        awsAccessKeyId: process.env.MY_AWS_ACCESS_KEY_ID,
-        awsSecretAccessKey: process.env.MY_AWS_SECRET_ACCESS_KEY,
-        s3Bucket: process.env.S3_BUCKET,
-        cloudfrontKeyPairId: process.env.CLOUDFRONT_KEY_PAIR_ID,
-        cloudfrontPrivateKey: process.env.CLOUDFRONT_PRIVATE_KEY,
-        cloudfrontPrivateKeyPath: process.env.CLOUDFRONT_PRIVATE_KEY_PATH,
+        awsRegion: '',
+        awsAccessKeyId: '',
+        awsSecretAccessKey: '',
+        s3Bucket: '',
+        cloudfrontKeyPairId: '',
+        cloudfrontPrivateKey: '',
+        cloudfrontPrivateKeyPath: '',
         oauth: {
             discord: {
                 clientId: '',
@@ -35,8 +45,8 @@ export default defineNuxtConfig({
             },
         },
         public: {
-            cloudfrontDomain: process.env.CLOUDFRONT_DOMAIN
-        }
+            cloudfrontDomain: '',
+        },
     },
     css: ['~/assets/css/main.css'],
     vue: {
