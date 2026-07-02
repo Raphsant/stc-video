@@ -39,10 +39,16 @@ export default defineEventHandler(async (event) => {
         })
       )
 
-      const ranked = (folderResult.Contents ?? [])
+      const candidates = (folderResult.Contents ?? [])
         .filter(obj => obj.Key && VIDEO_EXT.test(obj.Key) && (obj.Size ?? 0) > 0)
+
+      // Overrides must load before the access check: uploadedAt overrides
+      // (set on folder moves) take precedence over S3 LastModified.
+      const overrides = await getVideoOverrides(candidates.map(obj => obj.Key!))
+
+      const ranked = candidates
         .map(obj => {
-          const uploadedAt = obj.LastModified?.getTime() ?? null
+          const uploadedAt = overrides.get(obj.Key!)?.uploadedAt ?? obj.LastModified?.getTime() ?? null
           const decision = checkVideoAccess({ group, key: obj.Key!, uploadedAt })
           return {
             key: obj.Key!,
@@ -62,10 +68,9 @@ export default defineEventHandler(async (event) => {
         })
         .slice(0, 5)
 
-      const overrides = await getDisplayNames(ranked.map(v => v.key))
       const recentVideos = ranked.map(({ lastModified: _, ...v }) => ({
         ...v,
-        name: overrides.get(v.key) ?? v.name,
+        name: overrides.get(v.key)?.displayName ?? v.name,
       }))
 
       return { prefix, name, recentVideos }

@@ -33,33 +33,37 @@ export default defineEventHandler(async (event) => {
       name: p.slice(prefix.length).replace(/\/$/, ''),
     }))
 
-  const built = (result.Contents ?? [])
+  const candidates = (result.Contents ?? [])
     .filter(obj => obj.Key && !obj.Key.startsWith('bitacora/') && VIDEO_EXT.test(obj.Key) && (obj.Size ?? 0) > 0)
-    .map(obj => {
-      const uploadedAt = obj.LastModified?.getTime() ?? null
-      const decision = checkVideoAccess({ group, key: obj.Key!, uploadedAt })
-      return {
-        key: obj.Key!,
-        name: obj.Key!.slice(prefix.length).replace(/\.[^/.]+$/, ''),
-        size: obj.Size,
-        lastModified: uploadedAt,
-        url: decision.allowed ? signVideoUrl(obj.Key!, config) : null,
-        thumb: signVideoUrl(`${obj.Key!}.jpg`, config),
-        locked: !decision.allowed,
-        lockReason: decision.reason ?? null,
-      }
-    })
+
+  // Overrides must load before the access check: uploadedAt overrides
+  // (set on folder moves) take precedence over S3 LastModified.
+  const overrides = await getVideoOverrides(candidates.map(obj => obj.Key!))
+
+  const built = candidates.map(obj => {
+    const uploadedAt = overrides.get(obj.Key!)?.uploadedAt ?? obj.LastModified?.getTime() ?? null
+    const decision = checkVideoAccess({ group, key: obj.Key!, uploadedAt })
+    return {
+      key: obj.Key!,
+      name: obj.Key!.slice(prefix.length).replace(/\.[^/.]+$/, ''),
+      size: obj.Size,
+      lastModified: uploadedAt,
+      url: decision.allowed ? signVideoUrl(obj.Key!, config) : null,
+      thumb: signVideoUrl(`${obj.Key!}.jpg`, config),
+      locked: !decision.allowed,
+      lockReason: decision.reason ?? null,
+    }
+  })
 
   // Apply display-name overrides after sorting, so chronological order still
   // derives from the original filename (renames must not reorder the grid).
-  const overrides = await getDisplayNames(built.map(v => v.key))
   const videos = built
     .sort((a, b) => {
       const da = parseVideoDate(a.name) ?? a.lastModified ?? 0
       const db = parseVideoDate(b.name) ?? b.lastModified ?? 0
       return db - da
     })
-    .map(({ lastModified: _, ...v }) => ({ ...v, name: overrides.get(v.key) ?? v.name }))
+    .map(({ lastModified: _, ...v }) => ({ ...v, name: overrides.get(v.key)?.displayName ?? v.name }))
 
   return { prefix, folders, videos }
 })

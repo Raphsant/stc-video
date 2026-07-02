@@ -44,8 +44,16 @@ export default defineEventHandler(async (event) => {
   const fallbackName = key.split('/').pop()?.replace(/\.[^/.]+$/, '') ?? key
 
   if (!name) {
+    // Clear only the name — the doc may also carry an uploadedAt override
+    // (set on folder moves) that must survive a rename reset. Drop the doc
+    // entirely only when nothing else remains on it.
     // Cast: nuxt-mongoose types the filter loosely (same quirk as the models).
-    await VideoMeta.deleteOne({ s3Key: key } as any)
+    const existing = await VideoMeta.findOne({ s3Key: key } as any).lean()
+    if (existing?.uploadedAt) {
+      await VideoMeta.updateOne({ s3Key: key } as any, { displayName: null })
+    } else if (existing) {
+      await VideoMeta.deleteOne({ s3Key: key } as any)
+    }
     return { key, name: fallbackName, overridden: false }
   }
 

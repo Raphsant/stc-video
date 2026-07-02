@@ -27,7 +27,11 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 500, message: 'Error al obtener el video' })
   }
 
-  const decision = checkVideoAccess({ group, key, uploadedAt })
+  // uploadedAt overrides (set on folder moves) take precedence over S3
+  // LastModified — a moved file's LastModified is the move time, not the
+  // original availability date.
+  const override = (await getVideoOverrides([key])).get(key)
+  const decision = checkVideoAccess({ group, key, uploadedAt: override?.uploadedAt ?? uploadedAt })
   if (!decision.allowed) {
     throw createError({
       statusCode: 403,

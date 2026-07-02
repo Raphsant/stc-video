@@ -20,11 +20,18 @@ if (error.value) {
   throw createError({ statusCode: 404, statusMessage: 'Video no encontrado' })
 }
 
-// --- Staff-only rename (display-name override; S3 is never touched) ---
+// --- Staff-only management (rename override + move between folders) ---
 const { user } = useUserSession()
 const canManage = computed(() => isContentManager(user.value?.roles))
 
 const toast = useToast()
+const moveOpen = ref(false)
+
+// The key IS the identity, so a move lands on a new URL.
+function onMoved(newKey: string) {
+  navigateTo(`/videos/${encodeURIComponent(newKey)}`)
+}
+
 const renameOpen = ref(false)
 const newName = ref('')
 const saving = ref(false)
@@ -132,6 +139,16 @@ function formatBytes(bytes?: number) {
           aria-label="Renombrar video"
           @click="openRename"
         />
+        <UButton
+          v-if="canManage"
+          icon="i-lucide-folder-symlink"
+          color="neutral"
+          variant="ghost"
+          size="sm"
+          class="shrink-0 mt-0.5"
+          aria-label="Mover video a otra carpeta"
+          @click="moveOpen = true"
+        />
       </div>
       <UBadge
         color="neutral"
@@ -141,6 +158,14 @@ function formatBytes(bytes?: number) {
         class="shrink-0"
       />
     </div>
+
+    <!-- Staff-only move modal -->
+    <MoveVideoModal
+      v-model:open="moveOpen"
+      :video-key="key"
+      :video-name="video?.name"
+      @moved="onMoved"
+    />
 
     <!-- Staff-only rename modal -->
     <UModal v-model:open="renameOpen" title="Renombrar video">

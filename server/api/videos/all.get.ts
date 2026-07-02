@@ -58,7 +58,7 @@ export default defineEventHandler(async (event) => {
     ContinuationToken = result.IsTruncated ? result.NextContinuationToken : undefined
   } while (ContinuationToken)
 
-  const overrides = await getDisplayNames(
+  const overrides = await getVideoOverrides(
     Array.from(groups.values()).flatMap(list => list.map(v => v.key)),
   )
 
@@ -71,10 +71,11 @@ export default defineEventHandler(async (event) => {
         return db - da
       })
       const preview = sorted.slice(0, 5).map(({ lastModified, ...v }) => {
-        const decision = checkVideoAccess({ group, key: v.key, uploadedAt: lastModified ?? null })
+        const uploadedAt = overrides.get(v.key)?.uploadedAt ?? lastModified ?? null
+        const decision = checkVideoAccess({ group, key: v.key, uploadedAt })
         return {
           ...v,
-          name: overrides.get(v.key) ?? v.name,
+          name: overrides.get(v.key)?.displayName ?? v.name,
           url: decision.allowed ? signVideoUrl(v.key, config) : null,
           thumb: signVideoUrl(`${v.key}.jpg`, config),
           locked: !decision.allowed,

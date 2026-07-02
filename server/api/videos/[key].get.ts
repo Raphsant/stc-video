@@ -20,13 +20,13 @@ export default defineEventHandler(async (event) => {
     )
 
     const group = resolveGroup(user.roles)
-    const decision = checkVideoAccess({ group, key, uploadedAt: result.LastModified?.getTime() ?? null })
-
-    const override = (await getDisplayNames([key])).get(key)
+    const override = (await getVideoOverrides([key])).get(key)
+    const uploadedAt = override?.uploadedAt ?? result.LastModified?.getTime() ?? null
+    const decision = checkVideoAccess({ group, key, uploadedAt })
 
     return {
       key,
-      name: override ?? key.replace(/\.[^/.]+$/, ''),
+      name: override?.displayName ?? key.replace(/\.[^/.]+$/, ''),
       size: result.ContentLength,
       thumb: signVideoUrl(`${key}.jpg`, config),
       url: decision.allowed ? signVideoUrl(key, config) : null,
