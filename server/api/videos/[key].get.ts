@@ -22,7 +22,7 @@ export default defineEventHandler(async (event) => {
     const group = resolveGroup(user.roles)
     const override = (await getVideoOverrides([key])).get(key)
     const uploadedAt = override?.uploadedAt ?? result.LastModified?.getTime() ?? null
-    const decision = checkVideoAccess({ group, key, uploadedAt })
+    const decision = checkVideoAccess({ group, key, uploadedAt, rules: await getAccessRules() })
 
     return {
       key,

@@ -9,6 +9,7 @@ const isDark = computed({
 const mobileMenuOpen = ref(false)
 
 const { loggedIn, user, clear: clearSession } = useUserSession()
+const canManage = computed(() => isContentManager(user.value?.roles))
 
 const avatarUrl = computed(() => {
   if (!user.value?.id) return undefined
@@ -39,6 +40,7 @@ async function logout() {
           <div class="hidden sm:flex items-center gap-3">
             <UButton to="/" variant="ghost" color="neutral" icon="i-lucide-home" label="Inicio" />
             <UButton to="/all" variant="ghost" color="neutral" icon="i-lucide-list" label="Todo" />
+            <UButton v-if="canManage" to="/admin" variant="ghost" color="neutral" icon="i-lucide-shield" label="Admin" />
             <UColorModeButton />
             <template v-if="loggedIn">
               <NuxtLink
@@ -104,6 +106,17 @@ async function logout() {
             color="neutral"
             icon="i-lucide-list"
             label="Todos los videos"
+            block
+            class="justify-start"
+            @click="mobileMenuOpen = false"
+          />
+          <UButton
+            v-if="canManage"
+            to="/admin"
+            variant="ghost"
+            color="neutral"
+            icon="i-lucide-shield"
+            label="Administración"
             block
             class="justify-start"
             @click="mobileMenuOpen = false"

@@ -14,6 +14,7 @@ export default defineEventHandler(async (event) => {
 
   const config = useRuntimeConfig()
   const group = resolveGroup(user.roles)
+  const rules = await getAccessRules()
   const s3 = new S3Client({
     region: config.awsRegion,
     credentials: {
@@ -72,7 +73,7 @@ export default defineEventHandler(async (event) => {
       })
       const preview = sorted.slice(0, 5).map(({ lastModified, ...v }) => {
         const uploadedAt = overrides.get(v.key)?.uploadedAt ?? lastModified ?? null
-        const decision = checkVideoAccess({ group, key: v.key, uploadedAt })
+        const decision = checkVideoAccess({ group, key: v.key, uploadedAt, rules })
         return {
           ...v,
           name: overrides.get(v.key)?.displayName ?? v.name,

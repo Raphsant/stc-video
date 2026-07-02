@@ -31,7 +31,12 @@ export default defineEventHandler(async (event) => {
   // LastModified — a moved file's LastModified is the move time, not the
   // original availability date.
   const override = (await getVideoOverrides([key])).get(key)
-  const decision = checkVideoAccess({ group, key, uploadedAt: override?.uploadedAt ?? uploadedAt })
+  const decision = checkVideoAccess({
+    group,
+    key,
+    uploadedAt: override?.uploadedAt ?? uploadedAt,
+    rules: await getAccessRules(),
+  })
   if (!decision.allowed) {
     throw createError({
       statusCode: 403,
