@@ -48,6 +48,25 @@ export default defineNuxtConfig({
             cloudfrontDomain: '',
         },
     },
+    app: {
+        head: {
+            // String form, not a function: nuxt.config's head is serialized
+            // into the build, so a function titleTemplate is silently dropped.
+            // `title` here is the fallback for pages that set none.
+            title: 'Videoteca',
+            titleTemplate: '%s · Stocks Trading Club',
+            htmlAttrs: {lang: 'es'},
+            link: [
+                {rel: 'icon', type: 'image/x-icon', href: '/favicon.ico'},
+                {rel: 'icon', type: 'image/png', sizes: '512x512', href: '/icon.png'},
+                {rel: 'apple-touch-icon', sizes: '180x180', href: '/apple-touch-icon.png'},
+            ],
+            meta: [
+                {name: 'apple-mobile-web-app-title', content: 'STC'},
+                {name: 'theme-color', content: '#e99c13'},
+            ],
+        },
+    },
     css: ['~/assets/css/main.css'],
     vue: {
         compilerOptions: {

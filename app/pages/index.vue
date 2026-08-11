@@ -37,11 +37,11 @@ function formatSize(bytes?: number) {
 <template>
   <div>
     <!-- Hero -->
-    <section class="relative overflow-hidden rounded-3xl border border-gray-200 dark:border-gray-800 bg-gradient-to-br from-yellow-400/15 via-transparent to-fuchsia-500/10 px-6 sm:px-10 py-10 sm:py-14 mb-10">
+    <section class="relative overflow-hidden rounded-3xl border border-gray-200 dark:border-gray-800 bg-gradient-to-br from-yellow-400/15 via-transparent to-yellow-600/10 px-6 sm:px-10 py-10 sm:py-14 mb-10">
       <div class="absolute -top-20 -right-20 w-72 h-72 bg-yellow-400/10 rounded-full blur-3xl pointer-events-none" />
-      <div class="absolute -bottom-24 -left-16 w-72 h-72 bg-fuchsia-500/10 rounded-full blur-3xl pointer-events-none" />
+      <div class="absolute -bottom-24 -left-16 w-72 h-72 bg-yellow-600/10 rounded-full blur-3xl pointer-events-none" />
 
-      <div class="relative max-w-2xl">yarn
+      <div class="relative max-w-2xl">
         <UBadge color="primary" variant="soft" label="Miembros STC" icon="i-lucide-sparkles" class="mb-4" />
         <h1 class="text-3xl sm:text-4xl font-bold tracking-tight mb-3">
           Bienvenido de nuevo<span v-if="user">, <span class="text-yellow-400">{{ user.username }}</span></span>.

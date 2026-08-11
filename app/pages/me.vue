@@ -39,7 +39,7 @@ async function logout() {
 
 <template>
   <div v-if="user" class="max-w-2xl mx-auto">
-    <div class="relative overflow-hidden rounded-2xl border border-gray-200 dark:border-gray-800 bg-gradient-to-br from-yellow-400/10 via-transparent to-fuchsia-500/10 p-8 mb-8">
+    <div class="relative overflow-hidden rounded-2xl border border-gray-200 dark:border-gray-800 bg-gradient-to-br from-yellow-400/10 via-transparent to-yellow-600/10 p-8 mb-8">
       <div class="flex items-center gap-5">
         <img
           v-if="avatarUrl"
