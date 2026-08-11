@@ -31,9 +31,11 @@ async function logout() {
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="flex items-center justify-between h-16">
           <!-- Logo -->
-          <NuxtLink to="/" class="flex items-center gap-2 font-bold text-lg tracking-tight">
-            <UIcon name="i-lucide-play-circle" class="text-yellow-400 w-7 h-7" />
-            <span>STC<span class="text-yellow-400">Video</span></span>
+          <NuxtLink to="/" class="flex items-center gap-2.5 group" aria-label="Stocks Trading Club — Inicio">
+            <AppLogo height="h-9" />
+            <span
+              class="hidden sm:inline text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-500 dark:text-gray-400 border-l border-gray-200 dark:border-gray-800 pl-2.5 group-hover:text-yellow-500 transition"
+            >Videoteca</span>
           </NuxtLink>
 
           <!-- Desktop right side -->

@@ -11,34 +11,50 @@
     --color-cream-500: #bdb0a0;
 }
 
-/* Light mode: Claude-style creamy orange (readable on cream bg) */
-:root {
-    --color-primary-50:  #fdf5ef;
-    --color-primary-100: #fae5d0;
-    --color-primary-200: #f5c9a0;
-    --color-primary-300: #eca46a;
-    --color-primary-400: #e07848;
-    --color-primary-500: #c75e30;
-    --color-primary-600: #a44822;
-    --color-primary-700: #80381a;
-    --color-primary-800: #592712;
-    --color-primary-900: #38190b;
-    --color-primary-950: #1e0d05;
+/* Brand palette — the Stocks Trading Club amber.
+ *
+ * Tailwind's stock `yellow` is a lemon that clashes with the logo's amber, and
+ * the accent is written as `yellow-*` in ~50 places across the app, so the
+ * palette itself is retinted rather than every call site. `yellow-500` is the
+ * logo orange exactly; the rest is a constant-hue (38.5°) ramp around it.
+ * app.config.ts maps Nuxt UI's primary onto `yellow`, so this drives both the
+ * raw utilities and every UButton / UBadge / UAlert.
+ *
+ * `static` matters: Nuxt UI reaches these through `var(--color-yellow-N)` from
+ * its own stylesheet, which Tailwind's usage scan never sees. Under a plain
+ * `@theme` the shades no template class mentions get tree-shaken, and Nuxt UI
+ * silently falls back to stock Tailwind yellow for those steps.
+ */
+@theme static {
+    --color-brand: #e99c13;
+    --color-brand-ink: #2a2a2a;
+
+    --color-yellow-50:  #fef7eb;
+    --color-yellow-100: #feebc8;
+    --color-yellow-200: #fcd48d;
+    --color-yellow-300: #f8bd54;
+    --color-yellow-400: #f4aa25;
+    --color-yellow-500: #e99c13;
+    --color-yellow-600: #c9860d;
+    --color-yellow-700: #a56d09;
+    --color-yellow-800: #865909;
+    --color-yellow-900: #6b480b;
+    --color-yellow-950: #3f2a03;
 }
 
-/* Dark mode: golden yellow primary */
+/* Nuxt UI resolves --ui-primary to yellow-500 in light mode and yellow-400 in
+ * dark, then puts --ui-text-inverted on top of it: white in light, near-black
+ * in dark. The logo orange carries near-black fine (7.8:1) but only reaches
+ * 2.3:1 under white — so light mode alone steps down to a bronze that clears
+ * 4.5:1, and dark mode gets the logo orange exactly.
+ * (Note: --color-primary-* is NOT read by Nuxt UI v4 — don't reintroduce it.)
+ */
+:root {
+    --ui-primary: #ad640b;
+}
+
 .dark {
-    --color-primary-50:  #fdf8ec;
-    --color-primary-100: #f9edcc;
-    --color-primary-200: #f3d98b;
-    --color-primary-300: #ecc354;
-    --color-primary-400: #e5b63d;
-    --color-primary-500: #ddaa33;
-    --color-primary-600: #b08929;
-    --color-primary-700: #876820;
-    --color-primary-800: #5d4716;
-    --color-primary-900: #3c2d0d;
-    --color-primary-950: #221a07;
+    --ui-primary: #e99c13;
 }
 
 /* Page transitions */
