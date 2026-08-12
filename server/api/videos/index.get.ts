@@ -10,9 +10,10 @@ export default defineEventHandler(async (event) => {
   const config = useRuntimeConfig()
   const group = resolveGroup(user.roles)
   const rules = await getAccessRules()
-  // Admins (by Discord role ID) see and play everything; for everyone else,
-  // folder-restricted content is hidden outright (window locks stay visible
-  // as upsell cards — see isFolderBlockedForGroup).
+  // Admins (by Discord role ID) see and play everything. For everyone else,
+  // folders blocked for BOTH tiers (admin-only content) are hidden outright;
+  // single-tier blocks and window locks stay visible as locked upsell cards
+  // — see isFolderHiddenFromMembers.
   const admin = isAdmin(user.roleIds)
 
   const s3 = new S3Client({
@@ -34,7 +35,7 @@ export default defineEventHandler(async (event) => {
   const folders = (result.CommonPrefixes ?? [])
     .map(p => p.Prefix)
     .filter((p): p is string => !!p && !p.startsWith('bitacora/'))
-    .filter(p => admin || !isFolderBlockedForGroup(p, group, rules))
+    .filter(p => admin || !isFolderHiddenFromMembers(p, rules))
     .map(p => ({
       prefix: p,
       name: p.slice(prefix.length).replace(/\/$/, ''),
@@ -42,7 +43,7 @@ export default defineEventHandler(async (event) => {
 
   const candidates = (result.Contents ?? [])
     .filter(obj => obj.Key && !obj.Key.startsWith('bitacora/') && VIDEO_EXT.test(obj.Key) && (obj.Size ?? 0) > 0)
-    .filter(obj => admin || !isFolderBlockedForGroup(obj.Key!, group, rules))
+    .filter(obj => admin || !isFolderHiddenFromMembers(obj.Key!, rules))
 
   // Overrides must load before the access check: uploadedAt overrides
   // (set on folder moves) take precedence over S3 LastModified.
