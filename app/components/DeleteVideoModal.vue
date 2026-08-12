@@ -52,12 +52,12 @@ async function submitDelete() {
     <template #body>
       <div class="space-y-4">
         <!-- Which video -->
-        <div class="flex items-center gap-2 rounded-lg bg-gray-50 dark:bg-gray-900 px-3 py-2 text-sm">
-          <UIcon name="i-lucide-film" class="w-4 h-4 shrink-0 text-yellow-500" />
+        <div class="flex items-center gap-2 rounded-lg bg-raised px-3 py-2 text-sm">
+          <UIcon name="i-lucide-film" class="w-4 h-4 shrink-0 text-gold" />
           <span class="truncate font-medium">{{ videoName ?? fileName }}</span>
         </div>
 
-        <div class="flex items-start gap-2 rounded-lg bg-red-500/10 px-3 py-2 text-sm text-red-600 dark:text-red-400">
+        <div class="flex items-start gap-2 rounded-lg bg-red-500/10 px-3 py-2 text-sm text-red-400">
           <UIcon name="i-lucide-triangle-alert" class="w-4 h-4 shrink-0 mt-0.5" />
           <p>
             Esta acción es permanente. El video, su miniatura y el historial de

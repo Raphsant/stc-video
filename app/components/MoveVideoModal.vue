@@ -145,8 +145,8 @@ async function submitMove() {
     <template #body>
       <div class="space-y-4">
         <!-- Which video -->
-        <div class="flex items-center gap-2 rounded-lg bg-gray-50 dark:bg-gray-900 px-3 py-2 text-sm">
-          <UIcon name="i-lucide-film" class="w-4 h-4 shrink-0 text-yellow-500" />
+        <div class="flex items-center gap-2 rounded-lg bg-raised px-3 py-2 text-sm">
+          <UIcon name="i-lucide-film" class="w-4 h-4 shrink-0 text-gold" />
           <span class="truncate font-medium">{{ videoName ?? fileName }}</span>
         </div>
 
@@ -185,12 +185,12 @@ async function submitMove() {
           />
 
           <!-- Folder list -->
-          <div class="rounded-lg border border-gray-200 dark:border-gray-800 max-h-64 overflow-y-auto divide-y divide-gray-100 dark:divide-gray-800/60">
+          <div class="rounded-lg border border-hair max-h-64 overflow-y-auto divide-y divide-hair">
             <div v-if="loading" class="p-4 space-y-2">
-              <div v-for="n in 4" :key="n" class="h-8 rounded bg-gray-100 dark:bg-gray-900 animate-pulse" />
+              <div v-for="n in 4" :key="n" class="h-8 rounded bg-raised animate-pulse" />
             </div>
             <div v-else-if="loadError" class="p-4 text-sm text-center space-y-2">
-              <p class="text-red-500">No se pudieron cargar las carpetas.</p>
+              <p class="text-red-400">No se pudieron cargar las carpetas.</p>
               <UButton size="xs" color="neutral" variant="soft" label="Reintentar" @click="loadFolders" />
             </div>
             <template v-else>
@@ -198,14 +198,14 @@ async function submitMove() {
                 v-for="name in childFolders"
                 :key="name"
                 type="button"
-                class="w-full flex items-center gap-2.5 px-3 py-2.5 text-sm text-left hover:bg-gray-50 dark:hover:bg-gray-900 transition"
+                class="w-full flex items-center gap-2.5 px-3 py-2.5 text-sm text-left hover:bg-raised transition"
                 @click="enter(name)"
               >
-                <UIcon name="i-lucide-folder" class="w-4 h-4 shrink-0 text-yellow-500" />
+                <UIcon name="i-lucide-folder" class="w-4 h-4 shrink-0 text-gold" />
                 <span class="truncate flex-1">{{ name }}</span>
                 <UIcon name="i-lucide-chevron-right" class="w-4 h-4 shrink-0 opacity-40" />
               </button>
-              <p v-if="!childFolders.length" class="px-3 py-4 text-sm text-center text-gray-400">
+              <p v-if="!childFolders.length" class="px-3 py-4 text-sm text-center text-ash">
                 {{ filter ? 'Ninguna carpeta coincide con el filtro.' : 'Sin subcarpetas.' }}
               </p>
             </template>
@@ -242,7 +242,7 @@ async function submitMove() {
               />
               <UButton size="sm" color="neutral" variant="ghost" icon="i-lucide-x" @click="newFolderOpen = false" />
             </div>
-            <p v-if="newFolderError" class="text-xs text-red-500">{{ newFolderError }}</p>
+            <p v-if="newFolderError" class="text-xs text-red-400">{{ newFolderError }}</p>
             <p v-else class="text-xs text-muted">Se creará en S3 al mover el video.</p>
           </div>
 
@@ -250,8 +250,8 @@ async function submitMove() {
           <div
             class="flex items-start gap-2 rounded-lg px-3 py-2 text-sm"
             :class="canMoveHere
-              ? 'bg-yellow-400/10 text-yellow-600 dark:text-yellow-400'
-              : 'bg-gray-50 dark:bg-gray-900 text-gray-500 dark:text-gray-400'"
+              ? 'border border-gold-dim bg-gold-bg text-gold'
+              : 'bg-raised text-ash'"
           >
             <UIcon
               :name="isAtSource ? 'i-lucide-map-pin' : 'i-lucide-corner-down-right'"
@@ -268,7 +268,7 @@ async function submitMove() {
         <!-- Step 2: confirm -->
         <template v-else>
           <div class="space-y-3 text-sm">
-            <div class="rounded-lg border border-gray-200 dark:border-gray-800 divide-y divide-gray-100 dark:divide-gray-800/60">
+            <div class="rounded-lg border border-hair divide-y divide-hair">
               <div class="px-3 py-2.5 flex items-start gap-2">
                 <UIcon name="i-lucide-folder" class="w-4 h-4 shrink-0 mt-0.5 opacity-60" />
                 <div class="min-w-0">
@@ -277,11 +277,11 @@ async function submitMove() {
                 </div>
               </div>
               <div class="px-3 py-2.5 flex items-start gap-2">
-                <UIcon name="i-lucide-folder-symlink" class="w-4 h-4 shrink-0 mt-0.5 text-yellow-500" />
+                <UIcon name="i-lucide-folder-symlink" class="w-4 h-4 shrink-0 mt-0.5 text-gold" />
                 <div class="min-w-0">
                   <p class="text-xs text-muted uppercase tracking-wide">Hacia</p>
                   <p class="break-all font-medium">{{ currentPrefix }}</p>
-                  <p v-if="destIsNew" class="text-xs text-yellow-500 mt-0.5">Carpeta nueva — se creará al mover.</p>
+                  <p v-if="destIsNew" class="text-xs text-gold mt-0.5">Carpeta nueva — se creará al mover.</p>
                 </div>
               </div>
             </div>

@@ -208,22 +208,50 @@ The Stocks Trading Club wordmark. Assets live in `public/`:
 
 | File | Use |
 | --- | --- |
-| `logo.png` / `logo-dark.png` | Wordmark, 320×132. **Two files:** "TRADING CLUB" sits on transparency in near-black, so the dark variant recolors that band white. The orange banner is identical in both. |
-| `icon.png`, `apple-touch-icon.png`, `favicon.ico` | Square mark — the logo's "S" on brand orange. |
+| `logo-dark.png` | The wordmark, 320×132. The only one rendered. |
+| `logo.png` | Light-background variant — **unused.** Its "TRADING CLUB" band is near-black on transparency, invisible on the black surface. |
+| `icon.png`, `apple-touch-icon.png`, `favicon.ico` | Square mark — the logo's "S" on brand gold. |
 | `og-image.png` | 1200×630 social card (members share links in Discord). |
 
-Render the wordmark with `<AppLogo height="h-9" />` — never an `<img>` directly. It swaps the two files with `dark:hidden` / `hidden dark:block` rather than `useColorMode()`, so the right one is correct on first paint.
+Render the wordmark with `<AppLogo height="h-9" />` — never an `<img>` directly.
 
-**Palette.** Brand orange is `#e99c13`. `app.config.ts` maps Nuxt UI's primary onto `yellow`, and the accent is written as `yellow-*` at ~50 call sites, so `app/assets/css/main.css` retints the whole `yellow` ramp to a constant-hue (38.5°) amber with the logo orange at `yellow-500`. Two things to know before touching it:
+**The app is dark-only.** `colorMode` is pinned to `dark` in nuxt.config, so `.dark` is on `<html>` from the first SSR paint and **`dark:` variants are dead weight — don't write them.** There is no light palette and no colour-mode toggle.
 
-- The ramp lives in **`@theme static`**, not `@theme`. Nuxt UI reads it via `var(--color-yellow-N)` from its own stylesheet, which Tailwind's usage scan never sees — under a plain `@theme` the unreferenced shades get tree-shaken and Nuxt UI falls back to stock Tailwind yellow.
-- `--color-primary-*` is **not** read by Nuxt UI v4 (it resolves `--ui-primary` from the `yellow` ramp). A block of those existed for months with no effect; don't reintroduce it. To adjust the primary, set `--ui-primary` directly — which is what light mode does, stepping down to `#ad640b` because solid buttons put white on it there and the logo orange is only 2.3:1 against white (dark mode uses the logo orange as-is — its text is near-black there, 7.8:1).
+**Palette** (`app/assets/css/main.css`, from the STC brand brief):
+
+| Token | Value | Use |
+| --- | --- | --- |
+| `bg-ink` | `#000` | The page. The *only* background. |
+| `bg-card` / `bg-raised` | `#0b0b0b` / `#111` | The two elevations above it |
+| `border-hair` | `#1a1a1a` | Every divider and card edge |
+| `text-chalk` / `text-ash` | `#f0f0f0` / `#777` | Primary / secondary text |
+| `text-gold` + `gold-soft/dark/dim/bg` | `#ea9d13` … | Accent, plus its ramp |
+
+The rule that is easy to break: **#000 is the only page background.** Intermediate greys (`#060606`, `#0d0d0d`) used as section backgrounds read as visible seams. Cards lift off the page with `bg-card` + `border-hair`, never with a lighter page background.
+
+Three things to know before touching the CSS:
+
+- The `yellow` ramp is retinted to the brand gold (`yellow-500` = `#ea9d13`), because `app.config.ts` maps Nuxt UI's primary onto `yellow` and the accent is written as `yellow-*` at ~50 call sites. It lives in **`@theme static`**, not `@theme`: Nuxt UI reads it via `var(--color-yellow-N)` from its own stylesheet, which Tailwind's usage scan never sees — under a plain `@theme` the unreferenced shades get tree-shaken and Nuxt UI falls back to stock Tailwind yellow.
+- Nuxt UI's semantic tokens (`--ui-bg`, `--ui-border`, `--ui-text-*`, `--ui-primary`) are repointed at those surfaces in one block. That is what keeps UModal/UInput/UButton on-brand without per-component `ui` overrides. `--ui-text-inverted` must stay dark: gold carries near-black at 7.8:1 and white at only 2.3:1.
+- `--color-primary-*` is **not** read by Nuxt UI v4. A block of those existed for months with no effect; don't reintroduce it. Set `--ui-primary` directly.
+
+**Type.** Big Shoulders Display (600–900) for headings and big numbers, Inter (400–700) for everything else, loaded with `<link>` tags in nuxt.config. `h1/h2/h3` default to the display face; use `font-display` for anything else that needs it, and headings are set uppercase with tight tracking. The section rhythm is gold eyebrow → display heading → hairline rule — use `<SectionHeading>` rather than rebuilding it.
+
+**Motion.** `v-reveal` (`app/plugins/reveal.ts`) fades sections in on scroll. It fails open: the element ships visible and the directive *adds* the hidden state on mount, so no-JS, failed hydration and `prefers-reduced-motion` all leave the content readable.
 
 ### Video Player Component
 `components/VideoPlayer.client.vue` — Vidstack wrapper, must be `.client.vue` because Vidstack touches `window`.
 
+### Shared UI components
+The grids are assembled from these — reach for them before writing new card markup:
+
+- **`VideoCard`** — the video tile, used by every grid (`dense` for the home preview rows). Owns the locked-state contract, staff move/delete buttons and the resume bar.
+- **`FolderCard`** — the folder tile.
+- **`SectionHeading`** — eyebrow / display heading / count / "ver todo" link / hairline rule.
+- **`videoPath()` / `folderPath()`** (`app/utils/paths.ts`) — route builders. Keys and prefixes contain spaces, accents and `&` (`Q&A/2026/Mayo 2026/`), so every segment must be encoded the same way in all call sites or links 404 on exactly the folders whose names are most interesting.
+
 ### Locked Content UI
-When user lacks access, video cards show with `opacity-60`, a lock icon overlay, and a "Solo Alpha" / "Exclusivo Alpha" label. Click-through is disabled.
+When a user lacks access, `VideoCard` renders the thumbnail desaturated and blurred behind a gold lock badge and a "Solo Alpha" / "Exclusivo Alpha" label, and the card is a `<div>`, not a link. The single-video page swaps the player for a full upsell panel. In both cases the server has already withheld the URL — the UI never has one to leak.
 
 ### Localization
 UI text is in Spanish. Session types and folder names are in Spanish. Dates display in Spanish format.

@@ -2,11 +2,9 @@
 /**
  * The Stocks Trading Club wordmark.
  *
- * Two files, not one: the "TRADING CLUB" script sits on transparency in near
- * black, so it disappears on dark surfaces. `logo-dark.png` is the same artwork
- * with that band recoloured white — the orange banner is identical in both.
- * Both are swapped with CSS (not `useColorMode()`) so the correct one is right
- * on the very first paint, before the colour-mode script runs.
+ * Only the dark variant is shipped: the app has a single surface (#000), so
+ * the light-background artwork in `logo.png` — whose "TRADING CLUB" script is
+ * near-black on transparency — would be invisible everywhere it appeared.
  */
 withDefaults(defineProps<{
   /** Rendered height. The wordmark is 320x132, so width follows at ~2.42:1. */
@@ -21,20 +19,12 @@ withDefaults(defineProps<{
 <template>
   <span class="inline-flex shrink-0">
     <img
-      src="/logo.png"
-      :alt="alt"
-      width="320"
-      height="132"
-      :class="height"
-      class="w-auto dark:hidden"
-    >
-    <img
       src="/logo-dark.png"
       :alt="alt"
       width="320"
       height="132"
       :class="height"
-      class="w-auto hidden dark:block"
+      class="w-auto"
     >
   </span>
 </template>

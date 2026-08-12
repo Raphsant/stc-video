@@ -1,78 +1,239 @@
 @import "tailwindcss";
 @import "@nuxt/ui";
 
-@theme {
-    /* Cream palette for light mode surfaces */
-    --color-cream-50: #fefcf9;
-    --color-cream-100: #faf6ef;
-    --color-cream-200: #f0eae0;
-    --color-cream-300: #e5ddd0;
-    --color-cream-400: #d4c9b8;
-    --color-cream-500: #bdb0a0;
-}
+/* ─────────────────────────────────────────────────────────────────────────
+ * Stocks Trading Club — pure black + gold.
+ *
+ * The whole app is dark-only (see `colorMode` in nuxt.config): the brand
+ * system defines a single surface, #000, and every other value is built on
+ * top of it. There is no light palette, and no `dark:` variants — the `.dark`
+ * class is always present, so writing both branches only adds dead CSS.
+ *
+ * The one rule that is easy to break: **#000 is the only page background.**
+ * Intermediate greys (#060606, #0d0d0d) used as section backgrounds read as
+ * visible seams where two sections meet. Cards lift off the page with
+ * `bg-card` + `border-hair`, never with a lighter page background.
+ * ───────────────────────────────────────────────────────────────────────── */
 
-/* Brand palette — the Stocks Trading Club amber.
- *
- * Tailwind's stock `yellow` is a lemon that clashes with the logo's amber, and
- * the accent is written as `yellow-*` in ~50 places across the app, so the
- * palette itself is retinted rather than every call site. `yellow-500` is the
- * logo orange exactly; the rest is a constant-hue (38.5°) ramp around it.
- * app.config.ts maps Nuxt UI's primary onto `yellow`, so this drives both the
- * raw utilities and every UButton / UBadge / UAlert.
- *
- * `static` matters: Nuxt UI reaches these through `var(--color-yellow-N)` from
- * its own stylesheet, which Tailwind's usage scan never sees. Under a plain
- * `@theme` the shades no template class mentions get tree-shaken, and Nuxt UI
- * silently falls back to stock Tailwind yellow for those steps.
- */
 @theme static {
-    --color-brand: #e99c13;
-    --color-brand-ink: #2a2a2a;
+    /* Big Shoulders Display is a condensed grotesque — it carries headlines and
+     * big numbers. Inter carries everything else. Both are loaded with <link>
+     * tags in nuxt.config so the browser starts fetching them during HTML parse.
+     */
+    --font-sans: 'Inter', ui-sans-serif, system-ui, -apple-system, sans-serif;
+    --font-display: 'Big Shoulders Display', 'Inter', ui-sans-serif, sans-serif;
 
-    --color-yellow-50:  #fef7eb;
-    --color-yellow-100: #feebc8;
-    --color-yellow-200: #fcd48d;
-    --color-yellow-300: #f8bd54;
-    --color-yellow-400: #f4aa25;
-    --color-yellow-500: #e99c13;
-    --color-yellow-600: #c9860d;
-    --color-yellow-700: #a56d09;
-    --color-yellow-800: #865909;
-    --color-yellow-900: #6b480b;
-    --color-yellow-950: #3f2a03;
+    /* Surfaces. `ink` is the page and the only true background; `card` and
+     * `raised` are the two elevations above it, separated by `hair` borders. */
+    --color-ink: #000000;
+    --color-card: #0b0b0b;
+    --color-raised: #111111;
+    --color-hair: #1a1a1a;
+    --color-chalk: #f0f0f0;
+    --color-ash: #777777;
+
+    /* Named brand golds, straight from the brand brief. The `yellow` ramp
+     * below is the same five values interpolated into a full scale. */
+    --color-gold: #ea9d13;
+    --color-gold-soft: #f5c842;
+    --color-gold-dark: #b87510;
+    --color-gold-dim: #4a3200;
+    --color-gold-bg: #0f0800;
+
+    /* The accent is written as `yellow-*` at ~50 call sites, and Nuxt UI's
+     * primary maps onto `yellow` (app.config.ts), so the ramp itself is
+     * retinted rather than every call site. Anchors: 300 = gold-soft,
+     * 500 = gold, 600 = gold-dark, 900 = gold-dim, 950 = gold-bg.
+     *
+     * `static` matters: Nuxt UI reaches these through `var(--color-yellow-N)`
+     * from its own stylesheet, which Tailwind's usage scan never sees. Under a
+     * plain `@theme` the shades no template mentions get tree-shaken and Nuxt
+     * UI silently falls back to stock Tailwind yellow for those steps.
+     */
+    --color-yellow-50: #fdf6e7;
+    --color-yellow-100: #fbe9c2;
+    --color-yellow-200: #f7d68a;
+    --color-yellow-300: #f5c842;
+    --color-yellow-400: #f2b02a;
+    --color-yellow-500: #ea9d13;
+    --color-yellow-600: #b87510;
+    --color-yellow-700: #8f5a0d;
+    --color-yellow-800: #6b430b;
+    --color-yellow-900: #4a3200;
+    --color-yellow-950: #0f0800;
 }
 
-/* Nuxt UI resolves --ui-primary to yellow-500 in light mode and yellow-400 in
- * dark, then puts --ui-text-inverted on top of it: white in light, near-black
- * in dark. The logo orange carries near-black fine (7.8:1) but only reaches
- * 2.3:1 under white — so light mode alone steps down to a bronze that clears
- * 4.5:1, and dark mode gets the logo orange exactly.
- * (Note: --color-primary-* is NOT read by Nuxt UI v4 — don't reintroduce it.)
+/* Nuxt UI's semantic tokens, repointed at the brand surfaces. Every UButton,
+ * UModal, UInput, UBadge and UToast in the app resolves through these, so
+ * overriding them here is what keeps the component library on-brand without
+ * per-component `ui` overrides.
+ *
+ * `--ui-text-inverted` is what sits on top of a solid primary button: the
+ * gold carries near-black at 7.8:1 and white at only 2.3:1, so it must stay
+ * dark. (Note: `--color-primary-*` is NOT read by Nuxt UI v4 — don't add it.)
  */
-:root {
-    --ui-primary: #ad640b;
-}
-
+:root,
 .dark {
-    --ui-primary: #e99c13;
+    --ui-bg: #000000;
+    --ui-bg-muted: #0b0b0b;
+    --ui-bg-elevated: #111111;
+    --ui-bg-accented: #1a1a1a;
+    --ui-bg-inverted: #f0f0f0;
+
+    --ui-border: #1a1a1a;
+    --ui-border-muted: #141414;
+    --ui-border-accented: #262626;
+    --ui-border-inverted: #f0f0f0;
+
+    --ui-text-dimmed: #5c5c5c;
+    --ui-text-muted: #777777;
+    --ui-text-toned: #9a9a9a;
+    --ui-text: #d4d4d4;
+    --ui-text-highlighted: #f0f0f0;
+    --ui-text-inverted: #000000;
+
+    --ui-primary: #ea9d13;
+    --ui-radius: 0.5rem;
 }
 
-/* Page transitions */
+html {
+    color-scheme: dark;
+}
+
+body {
+    background-color: #000;
+    color: #d4d4d4;
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+}
+
+/* Headings are the display face by default — condensed, tight, uppercase-ready.
+ * `font-sans` on an individual heading opts back out. */
+h1, h2, h3 {
+    font-family: var(--font-display);
+    letter-spacing: -0.01em;
+}
+
+::selection {
+    background: #ea9d13;
+    color: #000;
+}
+
+/* A hairline scrollbar — the stock one is a bright grey slab against #000. */
+* {
+    scrollbar-width: thin;
+    scrollbar-color: #262626 transparent;
+}
+
+::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+}
+
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #1f1f1f;
+    border: 2px solid #000;
+    border-radius: 99px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #333;
+}
+
+/* ── Type helpers ─────────────────────────────────────────────────────────
+ * The small caps label above a section title. Used everywhere as the entry
+ * point into a section's rhythm: eyebrow → display heading → content. */
+.stc-eyebrow {
+    font-family: var(--font-sans);
+    font-size: 0.6875rem;
+    font-weight: 600;
+    line-height: 1;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: #ea9d13;
+}
+
+/* Gold gradient headline fill. Kept as a class rather than utilities because
+ * `background-clip: text` needs the transparent-fill pair to stay together. */
+.stc-gold-text {
+    background: linear-gradient(180deg, #f5c842 0%, #ea9d13 55%, #b87510 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+}
+
+/* Hairline rule that fades out from the left — the divider between sections. */
+.stc-rule {
+    height: 1px;
+    background: linear-gradient(90deg, #4a3200 0%, #1a1a1a 45%, transparent 100%);
+}
+
+/* ── Scroll reveal ────────────────────────────────────────────────────────
+ * Visible by default, so a failed or disabled script leaves the page fully
+ * readable. `v-reveal` (app/plugins/reveal.ts) adds `armed` on mount and
+ * `shown` when the element scrolls into view. */
+.stc-reveal {
+    opacity: 1;
+    transform: none;
+}
+
+.stc-reveal.armed {
+    opacity: 0;
+    transform: translateY(20px);
+    transition: opacity 0.6s ease, transform 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.stc-reveal.armed.shown {
+    opacity: 1;
+    transform: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .stc-reveal,
+    .stc-reveal.armed {
+        opacity: 1 !important;
+        transform: none !important;
+        transition: none !important;
+    }
+}
+
+/* ── Vidstack player ──────────────────────────────────────────────────────
+ * The default layout is themed through its own custom properties; pointing
+ * the brand colour at the gold covers the scrubber, buttons and menus. */
+media-player {
+    --media-brand: #ea9d13;
+    --media-focus-ring-color: #ea9d13;
+    --video-brand: #ea9d13;
+    --media-controls-color: #f0f0f0;
+    --media-menu-bg: #0b0b0b;
+    --media-menu-border: 1px solid #1a1a1a;
+    --media-slider-track-fill-bg: #ea9d13;
+    --media-tooltip-bg-color: #0b0b0b;
+    --media-tooltip-border: 1px solid #1a1a1a;
+}
+
+/* ── Route transitions ───────────────────────────────────────────────────── */
 .page-enter-active,
 .page-leave-active {
     transition: all 0.25s ease-out;
 }
+
 .page-enter-from,
 .page-leave-to {
     opacity: 0;
     transform: translateY(8px);
 }
 
-/* Layout transitions */
 .layout-enter-active,
 .layout-leave-active {
     transition: all 0.25s;
 }
+
 .layout-enter-from,
 .layout-leave-to {
     opacity: 0;
