@@ -21,12 +21,22 @@ const { progressMap } = useVideoProgress()
 // --- Staff-only: move a video to another folder straight from the grid ---
 const { user } = useUserSession()
 const canManage = computed(() => isContentManager(user.value?.roles))
+// Deleting is admin-only, a narrower gate than the rest of the staff tools.
+// Cosmetic here — the endpoint enforces it.
+const canDelete = computed(() => isAdmin(user.value?.roleIds))
 const moveOpen = ref(false)
 const moveTarget = ref<{ key: string; name: string } | null>(null)
+const deleteOpen = ref(false)
+const deleteTarget = ref<{ key: string; name: string } | null>(null)
 
 function openMove(video: { key: string; name: string }) {
   moveTarget.value = { key: video.key, name: video.name }
   moveOpen.value = true
+}
+
+function openDelete(video: { key: string; name: string }) {
+  deleteTarget.value = { key: video.key, name: video.name }
+  deleteOpen.value = true
 }
 
 const NuxtLink = resolveComponent('NuxtLink')
@@ -152,16 +162,29 @@ function formatSize(bytes?: number) {
                 :label="formatSize(video.size)"
                 class="absolute top-3 right-3 bg-black/60 text-white backdrop-blur"
               />
-              <UButton
-                v-if="canManage"
-                icon="i-lucide-folder-symlink"
-                size="xs"
-                color="neutral"
-                variant="solid"
-                class="absolute top-3 left-3 bg-black/60 text-white backdrop-blur hover:bg-black/80"
-                aria-label="Mover video a otra carpeta"
-                @click.stop.prevent="openMove(video)"
-              />
+              <!-- The card is a NuxtLink, so these must swallow the click. -->
+              <div class="absolute top-3 left-3 flex items-center gap-1.5">
+                <UButton
+                  v-if="canManage"
+                  icon="i-lucide-folder-symlink"
+                  size="xs"
+                  color="neutral"
+                  variant="solid"
+                  class="bg-black/60 text-white backdrop-blur hover:bg-black/80"
+                  aria-label="Mover video a otra carpeta"
+                  @click.stop.prevent="openMove(video)"
+                />
+                <UButton
+                  v-if="canDelete"
+                  icon="i-lucide-trash-2"
+                  size="xs"
+                  color="neutral"
+                  variant="solid"
+                  class="bg-black/60 text-white backdrop-blur hover:bg-red-600/80"
+                  aria-label="Eliminar video"
+                  @click.stop.prevent="openDelete(video)"
+                />
+              </div>
               <div v-if="progressMap[video.key]" class="absolute bottom-0 left-0 right-0 h-1 bg-white/20">
                 <div class="h-full bg-yellow-400" :style="{ width: progressMap[video.key] + '%' }" />
               </div>
@@ -190,6 +213,15 @@ function formatSize(bytes?: number) {
       :video-key="moveTarget.key"
       :video-name="moveTarget.name"
       @moved="refresh()"
+    />
+
+    <!-- Admin-only delete modal -->
+    <DeleteVideoModal
+      v-if="deleteTarget"
+      v-model:open="deleteOpen"
+      :video-key="deleteTarget.key"
+      :video-name="deleteTarget.name"
+      @deleted="refresh()"
     />
   </div>
 </template>

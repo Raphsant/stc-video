@@ -18,7 +18,7 @@
 // the client). We re-export it here because Nitro's server auto-import resolves
 // `resolveGroup` to this util, not to shared/.
 import type { AccessGroup } from '../../shared/utils/tier'
-export { resolveGroup, isContentManager, type AccessGroup } from '../../shared/utils/tier'
+export { resolveGroup, isContentManager, isAdmin, ADMIN_ROLE_ID, type AccessGroup } from '../../shared/utils/tier'
 
 export type LockReason = 'no-group' | 'folder' | 'window'
 

@@ -23,13 +23,22 @@ if (error.value) {
 // --- Staff-only management (rename override + move between folders) ---
 const { user } = useUserSession()
 const canManage = computed(() => isContentManager(user.value?.roles))
+// Deleting is admin-only, a narrower gate than the rest of the staff tools.
+// Cosmetic here — the endpoint enforces it.
+const canDelete = computed(() => isAdmin(user.value?.roleIds))
 
 const toast = useToast()
 const moveOpen = ref(false)
+const deleteOpen = ref(false)
 
 // The key IS the identity, so a move lands on a new URL.
 function onMoved(newKey: string) {
   navigateTo(`/videos/${encodeURIComponent(newKey)}`)
+}
+
+// Nothing left to show on this page — fall back to the folder it lived in.
+function onDeleted() {
+  navigateTo(backTo.value)
 }
 
 const renameOpen = ref(false)
@@ -149,6 +158,16 @@ function formatBytes(bytes?: number) {
           aria-label="Mover video a otra carpeta"
           @click="moveOpen = true"
         />
+        <UButton
+          v-if="canDelete"
+          icon="i-lucide-trash-2"
+          color="error"
+          variant="ghost"
+          size="sm"
+          class="shrink-0 mt-0.5"
+          aria-label="Eliminar video"
+          @click="deleteOpen = true"
+        />
       </div>
       <UBadge
         color="neutral"
@@ -165,6 +184,14 @@ function formatBytes(bytes?: number) {
       :video-key="key"
       :video-name="video?.name"
       @moved="onMoved"
+    />
+
+    <!-- Admin-only delete modal -->
+    <DeleteVideoModal
+      v-model:open="deleteOpen"
+      :video-key="key"
+      :video-name="video?.name"
+      @deleted="onDeleted"
     />
 
     <!-- Staff-only rename modal -->
