@@ -36,7 +36,4 @@ export const AccessConfig = defineMongooseModel({
     },
   },
   options: { timestamps: true },
-  hooks(schema) {
-    schema.index({ key: 1 }, { unique: true })
-  },
 })

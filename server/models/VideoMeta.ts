@@ -31,7 +31,4 @@ export const VideoMeta = defineMongooseModel({
     },
   },
   options: { timestamps: true },
-  hooks(schema) {
-    schema.index({ s3Key: 1 }, { unique: true })
-  },
 })
