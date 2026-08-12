@@ -16,10 +16,11 @@ export default defineEventHandler(async (event) => {
   const config = useRuntimeConfig()
   const group = resolveGroup(user.roles)
   const rules = await getAccessRules()
-  // Admins (by Discord role ID) see and play everything; for everyone else,
-  // folder-restricted content is hidden outright (window locks stay visible
-  // as upsell cards — see isFolderBlockedForGroup). Filtering happens before
-  // grouping so the per-folder counts don't betray hidden videos.
+  // Admins (by Discord role ID) see and play everything. For everyone else,
+  // folders blocked for BOTH tiers (admin-only content) are hidden outright;
+  // single-tier blocks and window locks stay visible as locked upsell cards
+  // — see isFolderHiddenFromMembers. Filtering happens before grouping so
+  // the per-folder counts don't betray hidden videos.
   const admin = isAdmin(user.roleIds)
   const s3 = new S3Client({
     region: config.awsRegion,
@@ -44,7 +45,7 @@ export default defineEventHandler(async (event) => {
       if (!obj.Key || !obj.Size) continue
       if (obj.Key.startsWith('bitacora/')) continue
       if (!VIDEO_EXT.test(obj.Key)) continue
-      if (!admin && isFolderBlockedForGroup(obj.Key, group, rules)) continue
+      if (!admin && isFolderHiddenFromMembers(obj.Key, rules)) continue
 
       const firstSlash = obj.Key.indexOf('/')
       const folder = firstSlash === -1 ? '' : obj.Key.slice(0, firstSlash)
