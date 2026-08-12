@@ -241,35 +241,37 @@ function discard() {
 </script>
 
 <template>
-  <div class="pb-24">
+  <div class="pb-28">
     <!-- Header -->
-    <header class="flex items-center gap-4 mb-8">
-      <div class="w-14 h-14 rounded-2xl bg-yellow-400/15 text-yellow-500 grid place-items-center shrink-0">
-        <UIcon name="i-lucide-shield" class="w-7 h-7" />
-      </div>
-      <div>
-        <h1 class="text-2xl sm:text-3xl font-bold">Administración</h1>
-        <p class="text-sm text-gray-500 dark:text-gray-400">
-          Controla qué carpetas y qué antigüedad de videos ve cada rol.
-        </p>
-      </div>
+    <header class="mb-12">
+      <p class="stc-eyebrow mb-4">Panel de staff</p>
+      <h1 class="font-display text-[clamp(2.25rem,6vw,3.75rem)] font-extrabold uppercase leading-[0.9] tracking-tight text-chalk">
+        Administración
+      </h1>
+      <p class="mt-4 max-w-xl text-sm text-ash">
+        Controla qué carpetas y qué antigüedad de videos ve cada rol.
+      </p>
+      <div class="stc-rule mt-8" />
     </header>
 
     <!-- Time windows -->
-    <section class="mb-10">
-      <h2 class="text-sm font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-3">
-        Ventana de tiempo
-      </h2>
-      <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+    <section class="mb-14">
+      <SectionHeading eyebrow="Regla 1" title="Ventana de tiempo" />
+
+      <div class="grid grid-cols-1 gap-4 lg:grid-cols-2">
         <div
           v-for="t in TIERS"
           :key="t.id"
-          class="rounded-2xl border border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-900 p-5 space-y-4"
+          class="space-y-5 rounded-xl border border-hair bg-card p-6"
         >
           <div class="flex items-center justify-between gap-3">
-            <div class="flex items-center gap-2.5 min-w-0">
-              <UIcon :name="t.icon" class="w-5 h-5 text-yellow-500 shrink-0" />
-              <span class="font-semibold">{{ t.label }}</span>
+            <div class="flex min-w-0 items-center gap-3">
+              <div class="grid h-9 w-9 shrink-0 place-items-center rounded-lg border border-gold-dim bg-gold-bg text-gold">
+                <UIcon :name="t.icon" class="h-4 w-4" />
+              </div>
+              <span class="font-display text-xl font-bold uppercase leading-none tracking-tight text-chalk">
+                {{ t.label }}
+              </span>
             </div>
             <USwitch
               :model-value="days[t.id] != null"
@@ -278,8 +280,8 @@ function discard() {
             />
           </div>
 
-          <div v-if="days[t.id] != null" class="flex items-center gap-2">
-            <span class="text-sm text-gray-500 dark:text-gray-400 shrink-0">No ven videos de hace más de</span>
+          <div v-if="days[t.id] != null" class="flex flex-wrap items-center gap-2">
+            <span class="shrink-0 text-sm text-ash">No ven videos de hace más de</span>
             <UInputNumber
               v-model="editors[t.id].value"
               :min="1"
@@ -297,82 +299,106 @@ function discard() {
             />
           </div>
 
-          <p class="text-sm" :class="days[t.id] == null ? 'text-gray-500 dark:text-gray-400' : 'text-yellow-600 dark:text-yellow-400'">
+          <p class="text-sm" :class="days[t.id] == null ? 'text-ash' : 'text-gold'">
             {{ windowSummary(t.id) }}
           </p>
-          <p v-if="t.note && days[t.id] != null" class="text-xs text-red-500 flex items-start gap-1.5">
-            <UIcon name="i-lucide-alert-triangle" class="w-3.5 h-3.5 shrink-0 mt-0.5" />
+
+          <p v-if="t.note && days[t.id] != null" class="flex items-start gap-2 text-xs text-red-400">
+            <UIcon name="i-lucide-alert-triangle" class="mt-0.5 h-3.5 w-3.5 shrink-0" />
             {{ t.note }}
           </p>
         </div>
       </div>
-      <p class="text-xs text-muted mt-2">Un mes equivale a 30 días. La antigüedad se mide desde que el video se subió a la plataforma.</p>
+
+      <p class="mt-3 text-xs text-ash">
+        Un mes equivale a 30 días. La antigüedad se mide desde que el video se subió a la plataforma.
+      </p>
     </section>
 
     <!-- Folder access -->
     <section>
-      <div class="flex items-center justify-between mb-3 gap-3 flex-wrap">
-        <h2 class="text-sm font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
-          Acceso por carpeta
-        </h2>
-        <div class="flex items-center gap-1">
-          <UButton size="xs" color="neutral" variant="ghost" icon="i-lucide-chevrons-up-down" label="Expandir todo" @click="setAllExpanded(true)" />
-          <UButton size="xs" color="neutral" variant="ghost" icon="i-lucide-chevrons-down-up" label="Contraer" @click="setAllExpanded(false)" />
-        </div>
-      </div>
+      <SectionHeading eyebrow="Regla 2" title="Acceso por carpeta">
+        <template #action>
+          <div class="flex shrink-0 items-center gap-1 pb-1">
+            <UButton
+              size="xs"
+              color="neutral"
+              variant="ghost"
+              icon="i-lucide-chevrons-up-down"
+              label="Expandir todo"
+              @click="setAllExpanded(true)"
+            />
+            <UButton
+              size="xs"
+              color="neutral"
+              variant="ghost"
+              icon="i-lucide-chevrons-down-up"
+              label="Contraer"
+              @click="setAllExpanded(false)"
+            />
+          </div>
+        </template>
+      </SectionHeading>
 
-      <div class="rounded-2xl border border-gray-200 dark:border-gray-800 overflow-hidden">
+      <div class="overflow-hidden rounded-xl border border-hair bg-card">
         <!-- Column headers -->
-        <div class="grid grid-cols-[1fr_72px_72px] items-center gap-2 px-4 py-2.5 bg-gray-50 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
+        <div class="grid grid-cols-[1fr_72px_72px] items-center gap-2 border-b border-hair bg-raised px-4 py-3 text-[10px] font-semibold uppercase tracking-[0.18em] text-ash">
           <span>Carpeta</span>
           <span class="text-center">Alpha</span>
           <span class="text-center">Delta</span>
         </div>
 
-        <div v-if="foldersPending" class="p-4 space-y-2">
-          <div v-for="n in 6" :key="n" class="h-9 rounded bg-gray-100 dark:bg-gray-900 animate-pulse" />
+        <div v-if="foldersPending" class="space-y-2 p-4">
+          <div v-for="n in 6" :key="n" class="h-9 animate-pulse rounded bg-raised" />
         </div>
-        <div v-else-if="foldersError" class="p-6 text-sm text-center space-y-2">
-          <p class="text-red-500">No se pudieron cargar las carpetas.</p>
-          <UButton size="xs" color="neutral" variant="soft" label="Reintentar" @click="refreshFolders()" />
+
+        <div v-else-if="foldersError" class="space-y-3 p-8 text-center text-sm">
+          <p class="text-red-400">No se pudieron cargar las carpetas.</p>
+          <UButton size="xs" color="neutral" variant="subtle" label="Reintentar" @click="refreshFolders()" />
         </div>
-        <div v-else class="divide-y divide-gray-100 dark:divide-gray-800/60 max-h-[32rem] overflow-y-auto">
+
+        <div v-else class="max-h-[32rem] divide-y divide-hair overflow-y-auto">
           <div
             v-for="node in visibleRows"
             :key="node.prefix"
-            class="grid grid-cols-[1fr_72px_72px] items-center gap-2 px-4 py-2 hover:bg-gray-50 dark:hover:bg-gray-900/60 transition"
+            class="grid grid-cols-[1fr_72px_72px] items-center gap-2 px-4 py-2.5 transition hover:bg-raised"
           >
-            <div class="flex items-center gap-1.5 min-w-0" :style="{ paddingLeft: `${node.depth * 1.25}rem` }">
+            <div class="flex min-w-0 items-center gap-1.5" :style="{ paddingLeft: `${node.depth * 1.25}rem` }">
               <UButton
                 v-if="node.children.length"
                 :icon="expanded.has(node.prefix) ? 'i-lucide-chevron-down' : 'i-lucide-chevron-right'"
                 size="xs"
                 color="neutral"
                 variant="ghost"
-                class="shrink-0 -ml-1.5"
+                class="-ml-1.5 shrink-0"
                 :aria-label="expanded.has(node.prefix) ? 'Contraer' : 'Expandir'"
                 @click="toggleExpand(node.prefix)"
               />
               <span v-else class="w-6 shrink-0" />
-              <UIcon name="i-lucide-folder" class="w-4 h-4 shrink-0 text-yellow-500" />
-              <span class="text-sm truncate">{{ node.name }}</span>
-              <UBadge
+              <UIcon name="i-lucide-folder" class="h-4 w-4 shrink-0 text-gold-dark" />
+              <span class="truncate text-sm text-chalk">{{ node.name }}</span>
+              <span
                 v-if="rowBadge(node.prefix)"
-                :color="rowBadge(node.prefix)!.color"
-                variant="subtle"
-                size="sm"
-                :label="rowBadge(node.prefix)!.label"
-                class="shrink-0 ml-1"
-              />
+                class="ml-1 shrink-0 rounded border px-2 py-0.5 text-[9px] font-semibold uppercase tracking-[0.14em]"
+                :class="rowBadge(node.prefix)!.color === 'error'
+                  ? 'border-red-900/60 bg-red-950/40 text-red-400'
+                  : 'border-gold-dim bg-gold-bg text-gold'"
+              >{{ rowBadge(node.prefix)!.label }}</span>
             </div>
-            <div class="flex justify-center" :title="ancestorBlocked(node.prefix, 'alpha') ? 'Bloqueada por una carpeta superior' : undefined">
+            <div
+              class="flex justify-center"
+              :title="ancestorBlocked(node.prefix, 'alpha') ? 'Bloqueada por una carpeta superior' : undefined"
+            >
               <UCheckbox
                 :model-value="isChecked(node.prefix, 'alpha')"
                 :disabled="ancestorBlocked(node.prefix, 'alpha')"
                 @update:model-value="toggleRule(node.prefix, 'alpha')"
               />
             </div>
-            <div class="flex justify-center" :title="ancestorBlocked(node.prefix, 'delta') ? 'Bloqueada por una carpeta superior' : undefined">
+            <div
+              class="flex justify-center"
+              :title="ancestorBlocked(node.prefix, 'delta') ? 'Bloqueada por una carpeta superior' : undefined"
+            >
               <UCheckbox
                 :model-value="isChecked(node.prefix, 'delta')"
                 :disabled="ancestorBlocked(node.prefix, 'delta')"
@@ -380,13 +406,14 @@ function discard() {
               />
             </div>
           </div>
-          <p v-if="!visibleRows.length" class="px-4 py-8 text-sm text-center text-gray-400">
+
+          <p v-if="!visibleRows.length" class="px-4 py-10 text-center text-sm text-ash">
             No hay carpetas en el bucket.
           </p>
         </div>
       </div>
 
-      <div class="text-xs text-muted mt-2 space-y-1">
+      <div class="mt-3 space-y-1 text-xs text-ash">
         <p>Desmarcar una casilla oculta la carpeta (y todo su contenido) para ese rol. Las reglas de una carpeta se heredan a sus subcarpetas.</p>
         <p>Los miembros Delta ven las carpetas exclusivas como contenido bloqueado con aviso de "Solo Alpha". Quitar Alpha oculta la carpeta para todos, incluido el staff.</p>
       </div>
@@ -401,15 +428,22 @@ function discard() {
       leave-from-class="opacity-100 translate-y-0"
       leave-to-class="opacity-0 translate-y-2"
     >
-      <div v-if="dirty" class="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 w-[calc(100%-2rem)] max-w-xl">
-        <div class="flex items-center justify-between gap-3 rounded-2xl border border-gray-200 dark:border-gray-800 bg-white/95 dark:bg-gray-950/95 backdrop-blur px-4 py-3 shadow-xl">
-          <p class="text-sm flex items-center gap-2 min-w-0">
-            <UIcon name="i-lucide-circle-alert" class="w-4 h-4 text-yellow-500 shrink-0" />
-            <span class="truncate">Tienes cambios sin guardar.</span>
+      <div v-if="dirty" class="fixed bottom-4 left-1/2 z-50 w-[calc(100%-2rem)] max-w-xl -translate-x-1/2">
+        <div class="flex items-center justify-between gap-3 rounded-xl border border-gold/30 bg-black/95 px-4 py-3 shadow-[0_20px_50px_-20px_rgba(234,157,19,0.5)] backdrop-blur-xl">
+          <p class="flex min-w-0 items-center gap-2 text-sm">
+            <UIcon name="i-lucide-circle-alert" class="h-4 w-4 shrink-0 text-gold" />
+            <span class="truncate text-chalk">Tienes cambios sin guardar.</span>
           </p>
-          <div class="flex items-center gap-2 shrink-0">
+          <div class="flex shrink-0 items-center gap-2">
             <UButton color="neutral" variant="ghost" label="Descartar" :disabled="saving" @click="discard" />
-            <UButton color="primary" icon="i-lucide-save" label="Guardar" :loading="saving" @click="save" />
+            <UButton
+              color="primary"
+              icon="i-lucide-save"
+              label="Guardar"
+              :loading="saving"
+              class="font-semibold uppercase tracking-wider"
+              @click="save"
+            />
           </div>
         </div>
       </div>

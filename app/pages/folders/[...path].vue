@@ -18,12 +18,13 @@ const { data, pending, refresh } = await useFetch('/api/videos', {
 })
 const { progressMap } = useVideoProgress()
 
-// --- Staff-only: move a video to another folder straight from the grid ---
+// --- Staff-only: move or delete a video straight from the grid ---
 const { user } = useUserSession()
 const canManage = computed(() => isContentManager(user.value?.roles))
 // Deleting is admin-only, a narrower gate than the rest of the staff tools.
 // Cosmetic here — the endpoint enforces it.
 const canDelete = computed(() => isAdmin(user.value?.roleIds))
+
 const moveOpen = ref(false)
 const moveTarget = ref<{ key: string; name: string } | null>(null)
 const deleteOpen = ref(false)
@@ -39,8 +40,6 @@ function openDelete(video: { key: string; name: string }) {
   deleteOpen.value = true
 }
 
-const NuxtLink = resolveComponent('NuxtLink')
-
 useSeoMeta({ title: () => currentName.value })
 
 const folders = computed(() => data.value?.folders ?? [])
@@ -55,154 +54,83 @@ const crumbs = computed(() => {
   }
   return out
 })
-
-function formatSize(bytes?: number) {
-  if (!bytes) return ''
-  const mb = bytes / (1024 * 1024)
-  return mb >= 1000 ? `${(mb / 1024).toFixed(1)} GB` : `${mb.toFixed(0)} MB`
-}
 </script>
 
 <template>
   <div>
     <!-- Breadcrumb -->
-    <nav class="flex items-center gap-1 text-sm text-gray-500 dark:text-gray-400 mb-6 flex-wrap">
+    <nav class="mb-8 flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] font-semibold uppercase tracking-[0.16em]">
       <template v-for="(c, i) in crumbs" :key="c.to">
         <NuxtLink
           :to="c.to"
-          class="hover:text-yellow-400 transition flex items-center gap-1"
+          class="flex items-center gap-1.5 transition"
+          :class="i === crumbs.length - 1 ? 'text-gold' : 'text-ash hover:text-chalk'"
         >
-          <UIcon v-if="i === 0" name="i-lucide-home" class="w-4 h-4" />
+          <UIcon v-if="i === 0" name="i-lucide-home" class="h-3.5 w-3.5" />
           <span>{{ c.label }}</span>
         </NuxtLink>
-        <UIcon v-if="i < crumbs.length - 1" name="i-lucide-chevron-right" class="w-4 h-4 opacity-50" />
+        <UIcon
+          v-if="i < crumbs.length - 1"
+          name="i-lucide-chevron-right"
+          class="h-3.5 w-3.5 text-gold-dark"
+        />
       </template>
     </nav>
 
     <!-- Header -->
-    <header class="flex items-start justify-between gap-4 mb-8">
-      <div class="min-w-0 flex items-center gap-4">
-        <div class="w-14 h-14 rounded-2xl bg-yellow-400/15 text-yellow-500 grid place-items-center shrink-0">
-          <UIcon name="i-lucide-folder-open" class="w-7 h-7" />
-        </div>
-        <div class="min-w-0">
-          <h1 class="text-2xl sm:text-3xl font-bold truncate">{{ currentName }}</h1>
-          <p class="text-sm text-gray-500 dark:text-gray-400">
-            {{ folders.length }} {{ folders.length === 1 ? 'subcarpeta' : 'subcarpetas' }} ·
-            {{ videos.length }} {{ videos.length === 1 ? 'video' : 'videos' }}
-          </p>
-        </div>
-      </div>
+    <header class="mb-12">
+      <p class="stc-eyebrow mb-4">Colección</p>
+      <h1 class="font-display text-[clamp(2.25rem,6vw,3.75rem)] font-extrabold uppercase leading-[0.9] tracking-tight text-chalk">
+        {{ currentName }}
+      </h1>
+      <p class="mt-4 text-[11px] font-semibold uppercase tracking-[0.18em] text-ash">
+        <span v-if="folders.length">
+          {{ folders.length }} {{ folders.length === 1 ? 'subcarpeta' : 'subcarpetas' }}
+          <span class="text-gold-dark"> · </span>
+        </span>
+        {{ videos.length }} {{ videos.length === 1 ? 'video' : 'videos' }}
+      </p>
+      <div class="stc-rule mt-8" />
     </header>
 
     <!-- Loading -->
-    <div v-if="pending" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-      <div v-for="n in 6" :key="n" class="aspect-video rounded-2xl bg-gray-100 dark:bg-gray-900 animate-pulse" />
+    <div v-if="pending" class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+      <div v-for="n in 6" :key="n" class="aspect-video animate-pulse rounded-xl border border-hair bg-card" />
     </div>
 
     <template v-else>
       <!-- Subfolders -->
-      <section v-if="folders.length" class="mb-10">
-        <h2 class="text-sm font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-3">
-          Subcarpetas
-        </h2>
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          <NuxtLink
-            v-for="folder in folders"
-            :key="folder.prefix"
-            :to="`/folders/${folder.prefix.replace(/\/$/, '').split('/').map(encodeURIComponent).join('/')}`"
-            class="group relative overflow-hidden rounded-2xl border border-gray-200 dark:border-gray-800 bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-950 p-5 flex items-center gap-4 transition hover:border-yellow-400/60 hover:-translate-y-0.5"
-          >
-            <div class="w-11 h-11 rounded-xl bg-yellow-400/15 text-yellow-500 grid place-items-center shrink-0 group-hover:bg-yellow-400/25 transition">
-              <UIcon name="i-lucide-folder" class="w-5 h-5" />
-            </div>
-            <div class="min-w-0 flex-1">
-              <p class="font-semibold truncate group-hover:text-yellow-400 transition">{{ folder.name }}</p>
-            </div>
-            <UIcon name="i-lucide-arrow-right" class="text-gray-400 group-hover:text-yellow-400 shrink-0 transition" />
-          </NuxtLink>
+      <section v-if="folders.length" v-reveal class="mb-14">
+        <SectionHeading title="Subcarpetas" :count="folders.length" />
+        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <FolderCard v-for="folder in folders" :key="folder.prefix" :folder="folder" />
         </div>
       </section>
 
       <!-- Videos -->
-      <section v-if="videos.length">
-        <h2 class="text-sm font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-3">
-          Videos
-        </h2>
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          <component
-            :is="video.locked ? 'div' : NuxtLink"
+      <section v-if="videos.length" v-reveal>
+        <SectionHeading title="Videos" :count="videos.length" />
+        <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          <VideoCard
             v-for="video in videos"
             :key="video.key"
-            :to="video.locked ? null : `/videos/${encodeURIComponent(video.key)}`"
-            class="group relative overflow-hidden rounded-2xl border border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-900 transition"
-            :class="video.locked ? 'cursor-default opacity-60' : 'hover:border-yellow-400/60 hover:-translate-y-0.5'"
-          >
-            <div class="relative aspect-video overflow-hidden bg-black">
-              <img
-                :src="video.thumb"
-                class="absolute inset-0 w-full h-full object-cover transition"
-                :class="video.locked ? 'opacity-40 blur-[1px]' : 'opacity-80 group-hover:opacity-100'"
-                alt=""
-              />
-              <div class="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
-              <div v-if="video.locked" class="absolute inset-0 flex flex-col items-center justify-center gap-1">
-                <UIcon name="i-lucide-lock" class="w-6 h-6 text-yellow-400" />
-                <span class="text-[10px] font-semibold uppercase tracking-wide text-white">{{ lockLabel(video.lockReason) }}</span>
-              </div>
-              <div v-else class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition">
-                <div class="w-14 h-14 rounded-full bg-yellow-400 text-black grid place-items-center shadow-xl">
-                  <UIcon name="i-lucide-play" class="w-6 h-6" />
-                </div>
-              </div>
-              <UBadge
-                v-if="video.size"
-                color="neutral"
-                variant="solid"
-                :label="formatSize(video.size)"
-                class="absolute top-3 right-3 bg-black/60 text-white backdrop-blur"
-              />
-              <!-- The card is a NuxtLink, so these must swallow the click. -->
-              <div class="absolute top-3 left-3 flex items-center gap-1.5">
-                <UButton
-                  v-if="canManage"
-                  icon="i-lucide-folder-symlink"
-                  size="xs"
-                  color="neutral"
-                  variant="solid"
-                  class="bg-black/60 text-white backdrop-blur hover:bg-black/80"
-                  aria-label="Mover video a otra carpeta"
-                  @click.stop.prevent="openMove(video)"
-                />
-                <UButton
-                  v-if="canDelete"
-                  icon="i-lucide-trash-2"
-                  size="xs"
-                  color="neutral"
-                  variant="solid"
-                  class="bg-black/60 text-white backdrop-blur hover:bg-red-600/80"
-                  aria-label="Eliminar video"
-                  @click.stop.prevent="openDelete(video)"
-                />
-              </div>
-              <div v-if="progressMap[video.key]" class="absolute bottom-0 left-0 right-0 h-1 bg-white/20">
-                <div class="h-full bg-yellow-400" :style="{ width: progressMap[video.key] + '%' }" />
-              </div>
-            </div>
-            <div class="p-4">
-              <p class="font-semibold truncate group-hover:text-yellow-400 transition">{{ video.name }}</p>
-            </div>
-          </component>
+            :video="video"
+            :progress="progressMap[video.key]"
+            :can-move="canManage"
+            :can-delete="canDelete"
+            @move="openMove(video)"
+            @delete="openDelete(video)"
+          />
         </div>
       </section>
 
       <!-- Empty -->
       <div
         v-if="!folders.length && !videos.length"
-        class="flex flex-col items-center justify-center py-24 text-gray-400 gap-3"
+        class="flex flex-col items-center justify-center gap-4 rounded-2xl border border-dashed border-hair py-24"
       >
-        <UIcon name="i-lucide-folder-x" class="w-12 h-12" />
-        <p class="text-sm">Esta carpeta está vacía.</p>
+        <UIcon name="i-lucide-folder-x" class="h-10 w-10 text-gold-dark" />
+        <p class="text-sm text-ash">Esta carpeta está vacía.</p>
       </div>
     </template>
 

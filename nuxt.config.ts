@@ -84,14 +84,32 @@ export default defineNuxtConfig({
                 {rel: 'icon', type: 'image/x-icon', href: '/favicon.ico'},
                 {rel: 'icon', type: 'image/png', sizes: '512x512', href: '/icon.png'},
                 {rel: 'apple-touch-icon', sizes: '180x180', href: '/apple-touch-icon.png'},
+                // Brand faces: Big Shoulders Display for headlines, Inter for
+                // everything else. <link> rather than an @import in main.css so
+                // the browser can start fetching them while it parses the head
+                // instead of waiting for the stylesheet to arrive and parse.
+                {rel: 'preconnect', href: 'https://fonts.googleapis.com'},
+                {rel: 'preconnect', href: 'https://fonts.gstatic.com', crossorigin: ''},
+                {
+                    rel: 'stylesheet',
+                    href: 'https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@600;700;800;900&family=Inter:wght@400;500;600;700&display=swap',
+                },
             ],
             meta: [
                 {name: 'apple-mobile-web-app-title', content: 'STC'},
-                {name: 'theme-color', content: '#e99c13'},
+                {name: 'theme-color', content: '#000000'},
             ],
         },
     },
     css: ['~/assets/css/main.css'],
+    // The brand system is a single surface — pure black — so there is no light
+    // palette to switch to. Forcing the preference (rather than leaving it on
+    // 'system') keeps `.dark` on <html> from the very first SSR paint, which is
+    // what lets main.css drop every `dark:` variant.
+    colorMode: {
+        preference: 'dark',
+        fallback: 'dark',
+    },
     vue: {
         compilerOptions: {
             isCustomElement: (tag) => tag.startsWith('media-'),
