@@ -55,6 +55,23 @@ export default defineNuxtConfig({
             cloudfrontDomain: '',
         },
     },
+    // Nearly every response is per-user: API responses carry session-dependent
+    // access decisions and freshly signed CloudFront URLs, and SSR page HTML
+    // embeds the same data in the Nuxt payload. No shared cache may ever store
+    // them. This was learned the hard way: a Cloudflare cache-everything rule
+    // served one user's signed URLs to anonymous visitors for hours. These
+    // headers make any such CDN misconfiguration inert. Most-specific rule
+    // wins, so the hashed build assets and brand images stay cacheable.
+    routeRules: {
+        '/_nuxt/**': { headers: { 'cache-control': 'public, max-age=31536000, immutable' } },
+        '/favicon.ico': { headers: { 'cache-control': 'public, max-age=86400' } },
+        '/icon.png': { headers: { 'cache-control': 'public, max-age=86400' } },
+        '/logo.png': { headers: { 'cache-control': 'public, max-age=86400' } },
+        '/logo-dark.png': { headers: { 'cache-control': 'public, max-age=86400' } },
+        '/apple-touch-icon.png': { headers: { 'cache-control': 'public, max-age=86400' } },
+        '/og-image.png': { headers: { 'cache-control': 'public, max-age=86400' } },
+        '/**': { headers: { 'cache-control': 'private, no-store' } },
+    },
     app: {
         head: {
             // String form, not a function: nuxt.config's head is serialized
