@@ -17,8 +17,20 @@ const DELTA_ROLE_KEYS = new Set(['delta'])
 // a manager.
 const STAFF_ROLE_KEYS = new Set(['admin', 'mod', 'coach'])
 
+// The Discord role ID of "Admin". Deleting a video is matched against this ID
+// rather than a name: names are editable in Discord and normalizeRoleKey would
+// collapse a renamed role onto the same key, IDs cannot be spoofed that way.
+export const ADMIN_ROLE_ID = '714214136506220625'
+
 function normalizeRoleKey(role: string): string {
   return role.toLowerCase().replace(/[^a-z]/g, '')
+}
+
+// True when the user holds the Admin role. Takes role IDs, not names — do not
+// route these through normalizeRoleKey, which strips digits and would turn
+// every ID into an empty string.
+export function isAdmin(roleIds: string[] | null | undefined): boolean {
+  return !!roleIds?.includes(ADMIN_ROLE_ID)
 }
 
 // True when the user holds a staff role and may edit video metadata. Used to

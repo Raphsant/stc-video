@@ -28,6 +28,8 @@ export default defineNuxtConfig({
     //   NUXT_CLOUDFRONT_PRIVATE_KEY  -> cloudfrontPrivateKey
     //   NUXT_PUBLIC_CLOUDFRONT_DOMAIN-> public.cloudfrontDomain
     //   NUXT_OAUTH_DISCORD_CLIENT_ID -> oauth.discord.clientId   (etc.)
+    //   NUXT_BOT_API_URL             -> botApiUrl
+    //   NUXT_BOT_API_KEY             -> botApiKey
     // The keys only need to exist here (empty defaults) for the override to apply.
     runtimeConfig: {
         awsRegion: '',
@@ -37,6 +39,11 @@ export default defineNuxtConfig({
         cloudfrontKeyPairId: '',
         cloudfrontPrivateKey: '',
         cloudfrontPrivateKeyPath: '',
+        // stcbot's internal API (origin only, no path) and its shared secret.
+        // Server-only — the key must never reach the client. Left empty the
+        // role sync is skipped entirely and roles fall back to MongoDB.
+        botApiUrl: '',
+        botApiKey: '',
         oauth: {
             discord: {
                 clientId: '',
