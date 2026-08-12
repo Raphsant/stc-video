@@ -1,4 +1,5 @@
 import { HeadObjectCommand, S3Client } from '@aws-sdk/client-s3'
+import type { AccessDecision } from '~~/server/utils/access'
 
 export default defineEventHandler(async (event) => {
   const { user } = await requireUserSession(event)
@@ -22,11 +23,18 @@ export default defineEventHandler(async (event) => {
     const group = resolveGroup(user.roles)
     const override = (await getVideoOverrides([key])).get(key)
     const uploadedAt = override?.uploadedAt ?? result.LastModified?.getTime() ?? null
-    const decision = checkVideoAccess({ group, key, uploadedAt, rules: await getAccessRules() })
+    // Admins (by Discord role ID) bypass folder and window rules — folders
+    // hidden from both tiers are exactly the admin-only ones.
+    const decision: AccessDecision = isAdmin(user.roleIds)
+      ? { allowed: true }
+      : checkVideoAccess({ group, key, uploadedAt, rules: await getAccessRules() })
 
     return {
       key,
-      name: override?.displayName ?? key.replace(/\.[^/.]+$/, ''),
+      // Basename, not the full key: the page title and player overlay show
+      // this, and the rename modal pre-fills it — a path here ends up baked
+      // into saved display names.
+      name: override?.displayName ?? (key.split('/').pop() ?? key).replace(/\.[^/.]+$/, ''),
       size: result.ContentLength,
       thumb: signVideoUrl(`${key}.jpg`, config),
       url: decision.allowed ? signVideoUrl(key, config) : null,

@@ -87,3 +87,21 @@ export function checkVideoAccess(opts: {
 
   return { allowed: true }
 }
+
+// Whether a path sits inside a subtree some folder rule denies to `group`.
+// Used by the listing endpoints to HIDE folder-restricted content outright —
+// unlike window locks, which stay visible as locked cards to drive upgrades,
+// a restricted folder shouldn't advertise its existence. Works for folder
+// prefixes and full video keys alike; because nested rules AND together (a
+// child can't re-allow what an ancestor blocks), any path inside a blocked
+// subtree is wholly blocked, so hiding the entry hides nothing reachable.
+// Group-less users don't hide: everything of theirs is already locked
+// 'no-group', and the folder tree doubles as the upsell surface.
+export function isFolderBlockedForGroup(
+  path: string,
+  group: AccessGroup | null,
+  rules: AccessRules,
+): boolean {
+  if (!group) return false
+  return rules.folderRules.some(r => !r.allowed[group] && path.startsWith(r.prefix))
+}

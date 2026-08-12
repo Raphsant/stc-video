@@ -1,4 +1,5 @@
 import { ListObjectsV2Command, S3Client } from '@aws-sdk/client-s3'
+import type { AccessDecision } from '~~/server/utils/access'
 
 const VIDEO_EXT = /\.(mp4|mov|m4v|mkv|webm|avi)$/i
 
@@ -8,6 +9,10 @@ export default defineEventHandler(async (event) => {
   const config = useRuntimeConfig()
   const group = resolveGroup(user.roles)
   const rules = await getAccessRules()
+  // Admins (by Discord role ID) see and play everything; for everyone else,
+  // folder-restricted content is hidden outright (window locks stay visible
+  // as upsell cards — see isFolderBlockedForGroup).
+  const admin = isAdmin(user.roleIds)
 
   const s3 = new S3Client({
     region: config.awsRegion,
@@ -28,6 +33,7 @@ export default defineEventHandler(async (event) => {
   const folderPrefixes = (rootResult.CommonPrefixes ?? [])
     .map(p => p.Prefix)
     .filter((p): p is string => !!p && !p.startsWith('bitacora/'))
+    .filter(p => admin || !isFolderBlockedForGroup(p, group, rules))
 
   const folders = await Promise.all(
     folderPrefixes.map(async prefix => {
@@ -42,6 +48,7 @@ export default defineEventHandler(async (event) => {
 
       const candidates = (folderResult.Contents ?? [])
         .filter(obj => obj.Key && VIDEO_EXT.test(obj.Key) && (obj.Size ?? 0) > 0)
+        .filter(obj => admin || !isFolderBlockedForGroup(obj.Key!, group, rules))
 
       // Overrides must load before the access check: uploadedAt overrides
       // (set on folder moves) take precedence over S3 LastModified.
@@ -50,7 +57,9 @@ export default defineEventHandler(async (event) => {
       const ranked = candidates
         .map(obj => {
           const uploadedAt = overrides.get(obj.Key!)?.uploadedAt ?? obj.LastModified?.getTime() ?? null
-          const decision = checkVideoAccess({ group, key: obj.Key!, uploadedAt, rules })
+          const decision: AccessDecision = admin
+            ? { allowed: true }
+            : checkVideoAccess({ group, key: obj.Key!, uploadedAt, rules })
           return {
             key: obj.Key!,
             name: obj.Key!.slice(prefix.length).replace(/\.[^/.]+$/, ''),

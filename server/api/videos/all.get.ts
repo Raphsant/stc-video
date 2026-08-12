@@ -1,4 +1,5 @@
 import { ListObjectsV2Command, S3Client } from '@aws-sdk/client-s3'
+import type { AccessDecision } from '~~/server/utils/access'
 
 const VIDEO_EXT = /\.(mp4|mov|m4v|mkv|webm|avi)$/i
 
@@ -15,6 +16,11 @@ export default defineEventHandler(async (event) => {
   const config = useRuntimeConfig()
   const group = resolveGroup(user.roles)
   const rules = await getAccessRules()
+  // Admins (by Discord role ID) see and play everything; for everyone else,
+  // folder-restricted content is hidden outright (window locks stay visible
+  // as upsell cards — see isFolderBlockedForGroup). Filtering happens before
+  // grouping so the per-folder counts don't betray hidden videos.
+  const admin = isAdmin(user.roleIds)
   const s3 = new S3Client({
     region: config.awsRegion,
     credentials: {
@@ -38,6 +44,7 @@ export default defineEventHandler(async (event) => {
       if (!obj.Key || !obj.Size) continue
       if (obj.Key.startsWith('bitacora/')) continue
       if (!VIDEO_EXT.test(obj.Key)) continue
+      if (!admin && isFolderBlockedForGroup(obj.Key, group, rules)) continue
 
       const firstSlash = obj.Key.indexOf('/')
       const folder = firstSlash === -1 ? '' : obj.Key.slice(0, firstSlash)
@@ -73,7 +80,9 @@ export default defineEventHandler(async (event) => {
       })
       const preview = sorted.slice(0, 5).map(({ lastModified, ...v }) => {
         const uploadedAt = overrides.get(v.key)?.uploadedAt ?? lastModified ?? null
-        const decision = checkVideoAccess({ group, key: v.key, uploadedAt, rules })
+        const decision: AccessDecision = admin
+          ? { allowed: true }
+          : checkVideoAccess({ group, key: v.key, uploadedAt, rules })
         return {
           ...v,
           name: overrides.get(v.key)?.displayName ?? v.name,
