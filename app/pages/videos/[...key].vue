@@ -1,6 +1,12 @@
 <script setup lang="ts">
 const route = useRoute()
-const key = decodeURIComponent(route.params.key as string)
+// Catch-all route: the key's slashes are real path segments, mirroring
+// /folders/[...path]. A single %2F-encoded segment 404s behind Cloudflare,
+// which decodes %2F to "/" before the request reaches the app.
+const key = (Array.isArray(route.params.key) ? route.params.key : [route.params.key])
+  .filter((s): s is string => !!s)
+  .map(s => decodeURIComponent(s))
+  .join('/')
 
 interface VideoResponse {
   key: string
@@ -14,7 +20,7 @@ interface VideoResponse {
 
 // Explicit type: the dynamic URL otherwise resolves to a union of every
 // /api/videos/* endpoint under Nuxt typed routes.
-const { data: video, error, refresh } = await useFetch<VideoResponse>(`/api/videos/${encodeURIComponent(key)}`)
+const { data: video, error, refresh } = await useFetch<VideoResponse>(videoApiPath(key))
 
 if (error.value) {
   throw createError({ statusCode: 404, statusMessage: 'Video no encontrado' })
