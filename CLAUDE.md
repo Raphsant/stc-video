@@ -146,10 +146,49 @@ Staff roles (admin/mod/coach — `isContentManager` in `shared/utils/tier.ts`) g
 
 - **Rename** — `PATCH /api/admin/videos/rename`: display-name override stored in `videometas`; the S3 object is never touched.
 - **Move** — `POST /api/admin/videos/move` (`{ key, destPrefix }`): moves a video to another S3 folder via copy → verify → re-key MongoDB → delete original (never deletes before the copy is verified; uses multipart copy above S3's 5 GB single-copy limit). The thumbnail moves with it and the Lambda regenerates it anyway.
-- **Folder tree** — `GET /api/admin/folders`: flat list of every folder prefix, feeds the move destination picker (`app/components/MoveVideoModal.vue`) and the admin panel's folder tree.
+- **Folder tree** — `GET /api/admin/folders`: flat list of every folder prefix, feeds the destination pickers (`app/components/FolderPicker.vue`, used by the move modal and the uploader) and the admin panel's folder tree.
 - **Access rules** — `GET`/`PUT /api/admin/access` + the `/admin` page (`app/pages/admin.vue`): per-tier time windows and per-folder Alpha/Delta visibility (see Access Control Model).
+- **Upload** — the `/upload` page (`app/pages/upload.vue`). **Admin-only** (`requireAdmin`, matched on Discord role ID), stricter than the rest of this list because it writes new objects to the bucket.
 
 **Critical invariant:** an S3 copy resets `LastModified`, which the delta 30-day window reads. The move endpoint preserves the original availability date in `videometas.uploadedAt`, and every access-window check prefers that override over S3 `LastModified` (via `getVideoOverrides` in `server/utils/videoMeta.ts`). Any new endpoint that calls `checkVideoAccess` must do the same.
+
+## Video Upload (browser → S3 direct)
+
+Uploads **must not** pass through Nitro: the site is served through a Cloudflare tunnel that caps request bodies around 100 MB, and sessions run to multiple GB. The browser PUTs each part straight to S3 with a presigned URL; the server only brokers the multipart lifecycle.
+
+```
+browser ──presigned PUT per part──> S3        (bytes; bypasses the tunnel entirely)
+   └────create/sign/complete────> Nitro       (JSON only; a few hundred bytes)
+```
+
+Endpoints, all under `server/api/admin/uploads/` and all `requireAdmin`:
+
+| Route | Does |
+| --- | --- |
+| `POST create` | Validates prefix + name + size, picks a free key, opens the multipart upload. Returns `{ key, uploadId, partSize, partCount }`. |
+| `POST sign` | Presigns up to 100 `UploadPart` URLs (1 h expiry). Pure local crypto — no S3 round-trip. |
+| `POST complete` | Assembles the parts, then HeadObject-verifies the size (a mismatch is a `warnings` entry, never a failure). |
+| `POST abort` | Discards the upload. Idempotent — a missing upload is a success. |
+
+Client: `app/composables/useVideoUpload.ts`. Part size is a flat 16 MiB (S3 exempts only the *last* part from the 5 MiB floor, so even a small file is a one-part multipart upload and there is a single code path). Parts go 4-at-a-time via `XMLHttpRequest` — `fetch` cannot report upload progress. Each part retries 3× with backoff and **re-signs on every retry**, so URL expiry, clock skew and transient 403s all recover through one path. The queue lives at module scope, so navigating away from `/upload` does not kill a transfer; a `beforeunload` guard catches tab closes.
+
+**No MongoDB write happens.** S3 is the source of truth, the listing endpoints pick the object up on the next request, `uploadedAt` falls back to S3 `LastModified` (correct for a fresh upload), and the thumbnail Lambda fires on `s3:ObjectCreated` — `CompleteMultipartUpload` included.
+
+**Name collisions auto-suffix** ` (2)`, ` (3)` server-side, matching the bucket's existing convention. Same-named files queued together are pre-suffixed client-side too, because an in-flight multipart upload is invisible to `HeadObject`.
+
+### Required bucket configuration (AWS console — not in this repo)
+
+**CORS.** Without `ExposeHeaders: ETag` every part PUT appears to succeed but the browser cannot read the ETag, so `complete` can never assemble the object:
+
+```json
+[{ "AllowedHeaders": ["*"], "AllowedMethods": ["PUT"],
+   "AllowedOrigins": ["https://<production-domain>", "http://localhost:3000"],
+   "ExposeHeaders": ["ETag"], "MaxAgeSeconds": 3000 }]
+```
+
+**Lifecycle rule.** A closed tab mid-upload leaves parts that are billable but invisible in every listing. Set `AbortIncompleteMultipartUpload: { DaysAfterInitiation: 7 }` on the bucket.
+
+**IAM.** The existing key already has everything the flow needs (verified end-to-end). It does **not** have `s3:ListBucketMultipartUploads`, so orphaned uploads cannot be enumerated with the app's credentials — which is why the lifecycle rule above is the cleanup mechanism rather than a manual sweep.
 
 ## Signed URL Flow
 

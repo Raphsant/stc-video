@@ -13,103 +13,33 @@ const emit = defineEmits<{ moved: [newKey: string] }>()
 
 const toast = useToast()
 
-// --- Folder tree (fetched fresh on every open: uploads may have added folders) ---
-const loading = ref(false)
-const loadError = ref(false)
-const allFolders = ref<string[]>([])
-const createdFolders = ref<string[]>([]) // added locally; S3 creates them on move
-
-async function loadFolders() {
-  loading.value = true
-  loadError.value = false
-  try {
-    const res = await $fetch('/api/admin/folders')
-    allFolders.value = res.folders
-  } catch {
-    loadError.value = true
-  } finally {
-    loading.value = false
-  }
-}
-
-// --- Browser state ---
-const path = ref<string[]>([])
-const filter = ref('')
 const step = ref<'browse' | 'confirm'>('browse')
 const moving = ref(false)
-const newFolderOpen = ref(false)
-const newFolderName = ref('')
+
+// FolderPicker owns the browsing; this modal only cares where it landed.
+const currentPrefix = ref('')
+const createdFolders = ref<string[]>([]) // added locally; S3 creates them on move
+// Bumped on open so the picker remounts and re-fetches — another session may
+// have added folders since last time.
+const pickerKey = ref(0)
 
 const fileName = computed(() => props.videoKey.split('/').pop() ?? props.videoKey)
 const sourcePrefix = computed(() => {
   const i = props.videoKey.lastIndexOf('/')
   return i === -1 ? '' : props.videoKey.slice(0, i + 1)
 })
-const currentPrefix = computed(() => (path.value.length ? path.value.join('/') + '/' : ''))
 const isAtSource = computed(() => currentPrefix.value === sourcePrefix.value)
 const canMoveHere = computed(() => currentPrefix.value !== '' && !isAtSource.value)
-
-const folderSet = computed(() => new Set([...allFolders.value, ...createdFolders.value]))
-
-// Direct children of the current prefix, deduped, filtered and sorted (es).
-const childFolders = computed(() => {
-  const prefix = currentPrefix.value
-  const names = new Set<string>()
-  for (const f of folderSet.value) {
-    if (f === prefix || !f.startsWith(prefix)) continue
-    const rest = f.slice(prefix.length)
-    const name = rest.slice(0, rest.indexOf('/'))
-    if (name) names.add(name)
-  }
-  const q = filter.value.trim().toLowerCase()
-  return Array.from(names)
-    .filter(n => !q || n.toLowerCase().includes(q))
-    .sort((a, b) => a.localeCompare(b, 'es'))
-})
+const destIsNew = computed(() => createdFolders.value.includes(currentPrefix.value))
 
 // Reset and open the browser at the video's current folder each time.
 watch(open, (v) => {
   if (!v) return
-  path.value = sourcePrefix.value.split('/').filter(Boolean)
-  filter.value = ''
-  step.value = 'browse'
+  currentPrefix.value = sourcePrefix.value
   createdFolders.value = []
-  newFolderOpen.value = false
-  newFolderName.value = ''
-  loadFolders()
+  step.value = 'browse'
+  pickerKey.value++
 })
-
-function enter(name: string) {
-  path.value = [...path.value, name]
-  filter.value = ''
-}
-
-function jumpTo(depth: number) {
-  path.value = path.value.slice(0, depth)
-  filter.value = ''
-}
-
-// --- New folder (created in S3 implicitly when the move lands in it) ---
-const newFolderError = computed(() => {
-  const n = newFolderName.value.trim()
-  if (!n) return ''
-  if (n.includes('/')) return 'El nombre no puede contener "/"'
-  if (n === '.' || n === '..') return 'Nombre inválido'
-  if (n.length > 100) return 'El nombre es demasiado largo (máx. 100)'
-  return ''
-})
-
-function addFolder() {
-  const n = newFolderName.value.trim()
-  if (!n || newFolderError.value) return
-  const p = currentPrefix.value + n + '/'
-  if (!folderSet.value.has(p)) createdFolders.value.push(p)
-  newFolderName.value = ''
-  newFolderOpen.value = false
-  enter(n)
-}
-
-const destIsNew = computed(() => createdFolders.value.includes(currentPrefix.value))
 
 // --- Move ---
 async function submitMove() {
@@ -152,99 +82,11 @@ async function submitMove() {
 
         <!-- Step 1: browse -->
         <template v-if="step === 'browse'">
-          <!-- Breadcrumbs -->
-          <nav class="flex items-center gap-0.5 text-sm flex-wrap">
-            <UButton
-              size="xs"
-              :variant="path.length ? 'ghost' : 'soft'"
-              color="neutral"
-              icon="i-lucide-home"
-              label="Raíz"
-              @click="jumpTo(0)"
-            />
-            <template v-for="(seg, i) in path" :key="i">
-              <UIcon name="i-lucide-chevron-right" class="w-3.5 h-3.5 opacity-50 shrink-0" />
-              <UButton
-                size="xs"
-                :variant="i === path.length - 1 ? 'soft' : 'ghost'"
-                color="neutral"
-                :label="seg"
-                class="max-w-40"
-                @click="jumpTo(i + 1)"
-              />
-            </template>
-          </nav>
-
-          <!-- Filter -->
-          <UInput
-            v-model="filter"
-            icon="i-lucide-search"
-            size="sm"
-            placeholder="Filtrar carpetas…"
-            class="w-full"
+          <FolderPicker
+            :key="pickerKey"
+            v-model="currentPrefix"
+            v-model:created="createdFolders"
           />
-
-          <!-- Folder list -->
-          <div class="rounded-lg border border-hair max-h-64 overflow-y-auto divide-y divide-hair">
-            <div v-if="loading" class="p-4 space-y-2">
-              <div v-for="n in 4" :key="n" class="h-8 rounded bg-raised animate-pulse" />
-            </div>
-            <div v-else-if="loadError" class="p-4 text-sm text-center space-y-2">
-              <p class="text-red-400">No se pudieron cargar las carpetas.</p>
-              <UButton size="xs" color="neutral" variant="soft" label="Reintentar" @click="loadFolders" />
-            </div>
-            <template v-else>
-              <button
-                v-for="name in childFolders"
-                :key="name"
-                type="button"
-                class="w-full flex items-center gap-2.5 px-3 py-2.5 text-sm text-left hover:bg-raised transition"
-                @click="enter(name)"
-              >
-                <UIcon name="i-lucide-folder" class="w-4 h-4 shrink-0 text-gold" />
-                <span class="truncate flex-1">{{ name }}</span>
-                <UIcon name="i-lucide-chevron-right" class="w-4 h-4 shrink-0 opacity-40" />
-              </button>
-              <p v-if="!childFolders.length" class="px-3 py-4 text-sm text-center text-ash">
-                {{ filter ? 'Ninguna carpeta coincide con el filtro.' : 'Sin subcarpetas.' }}
-              </p>
-            </template>
-          </div>
-
-          <!-- New folder -->
-          <div v-if="!newFolderOpen">
-            <UButton
-              size="xs"
-              color="neutral"
-              variant="ghost"
-              icon="i-lucide-folder-plus"
-              label="Nueva carpeta aquí"
-              @click="newFolderOpen = true"
-            />
-          </div>
-          <div v-else class="space-y-1">
-            <div class="flex items-center gap-2">
-              <UInput
-                v-model="newFolderName"
-                size="sm"
-                placeholder="Nombre de la carpeta"
-                autofocus
-                class="flex-1"
-                @keydown.enter="addFolder"
-                @keydown.esc="newFolderOpen = false"
-              />
-              <UButton
-                size="sm"
-                color="primary"
-                label="Crear"
-                :disabled="!newFolderName.trim() || !!newFolderError"
-                @click="addFolder"
-              />
-              <UButton size="sm" color="neutral" variant="ghost" icon="i-lucide-x" @click="newFolderOpen = false" />
-            </div>
-            <p v-if="newFolderError" class="text-xs text-red-400">{{ newFolderError }}</p>
-            <p v-else class="text-xs text-muted">Se creará en S3 al mover el video.</p>
-          </div>
 
           <!-- Destination status -->
           <div
@@ -305,7 +147,7 @@ async function submitMove() {
             color="primary"
             icon="i-lucide-folder-symlink"
             label="Mover aquí"
-            :disabled="!canMoveHere || loading || loadError"
+            :disabled="!canMoveHere"
             @click="step = 'confirm'"
           />
         </template>

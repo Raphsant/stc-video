@@ -1,7 +1,6 @@
 import { ListObjectsV2Command, S3Client } from '@aws-sdk/client-s3'
 import type { AccessDecision } from '~~/server/utils/access'
-
-const VIDEO_EXT = /\.(mp4|mov|m4v|mkv|webm|avi)$/i
+import { VIDEO_EXT } from '~~/shared/utils/videoExt'
 
 type VideoEntry = {
   key: string

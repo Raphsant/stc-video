@@ -4,6 +4,9 @@ const mobileMenuOpen = ref(false)
 
 const { loggedIn, user, clear: clearSession } = useUserSession()
 const canManage = computed(() => isContentManager(user.value?.roles))
+// Uploading writes to the bucket, so it sits behind the stricter admin gate
+// (matched on role ID) rather than the staff one.
+const canUpload = computed(() => isAdmin(user.value?.roleIds))
 
 // Empty when signed out: every destination behind it just bounces back to
 // /login through the global auth middleware.
@@ -11,6 +14,7 @@ const nav = computed(() => loggedIn.value
   ? [
       { to: '/', label: 'Inicio', icon: 'i-lucide-home' },
       { to: '/all', label: 'Todo', icon: 'i-lucide-layout-grid' },
+      ...(canUpload.value ? [{ to: '/upload', label: 'Subir', icon: 'i-lucide-upload' }] : []),
       ...(canManage.value ? [{ to: '/admin', label: 'Admin', icon: 'i-lucide-shield' }] : []),
     ]
   : [])

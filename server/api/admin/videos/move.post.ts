@@ -10,6 +10,9 @@ import {
 } from '@aws-sdk/client-s3'
 import { VideoMeta } from '~~/server/models/VideoMeta'
 import { videoProgress } from '~~/server/models/VideoProgress'
+import { createS3Client, isNotFound } from '~~/server/utils/s3'
+import { MAX_KEY_LENGTH, normalizeDestPrefix } from '~~/server/utils/videoKeys'
+import { VIDEO_EXT } from '~~/shared/utils/videoExt'
 
 // Staff-only: move a video (and its thumbnail) to another S3 folder.
 // Body: { key: string, destPrefix: string }
@@ -27,47 +30,14 @@ import { videoProgress } from '~~/server/models/VideoProgress'
 // A MongoDB failure rolls the copy back; S3 cleanup failures degrade to
 // warnings in the response instead of failing the move.
 
-const VIDEO_EXT = /\.(mp4|mov|m4v|mkv|webm|avi)$/i
 const MAX_SINGLE_COPY = 5 * 1024 * 1024 * 1024 // S3 CopyObject hard limit
 const PART_SIZE = 1024 * 1024 * 1024
 const PART_CONCURRENCY = 4
-const MAX_KEY_LENGTH = 1024 // S3 hard limit
-
-function isNotFound(err: any): boolean {
-  return (
-    err?.name === 'NotFound' ||
-    err?.name === 'NoSuchKey' ||
-    err?.$metadata?.httpStatusCode === 404
-  )
-}
 
 // CopySource wants the key URL-encoded but with "/" kept as separators
 // (keys here contain spaces, brackets and "&").
 function copySource(bucket: string, key: string): string {
   return `${bucket}/${key.split('/').map(encodeURIComponent).join('/')}`
-}
-
-// Normalize and validate the destination prefix. Folders in S3 are virtual,
-// so moving into a not-yet-existing prefix simply creates it.
-function normalizeDestPrefix(raw: string): string {
-  let prefix = raw.trim().replace(/^\/+/, '')
-  if (prefix && !prefix.endsWith('/')) prefix += '/'
-
-  if (!prefix || prefix === '/') {
-    throw createError({ statusCode: 400, message: 'Selecciona una carpeta de destino' })
-  }
-  // eslint-disable-next-line no-control-regex
-  if (/[\x00-\x1F\x7F]/.test(prefix)) {
-    throw createError({ statusCode: 400, message: 'La carpeta de destino contiene caracteres inválidos' })
-  }
-  const segments = prefix.slice(0, -1).split('/')
-  if (segments.some(s => !s.trim() || s === '.' || s === '..')) {
-    throw createError({ statusCode: 400, message: 'La carpeta de destino no es válida' })
-  }
-  if (prefix.toLowerCase().startsWith('bitacora/')) {
-    throw createError({ statusCode: 400, message: 'Esa carpeta está reservada' })
-  }
-  return prefix
 }
 
 // Server-side S3 copy; switches to multipart above the single-copy limit.
@@ -144,15 +114,7 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 400, message: 'La ruta de destino es demasiado larga' })
   }
 
-  const config = useRuntimeConfig()
-  const bucket = config.s3Bucket
-  const s3 = new S3Client({
-    region: config.awsRegion,
-    credentials: {
-      accessKeyId: config.awsAccessKeyId,
-      secretAccessKey: config.awsSecretAccessKey,
-    },
-  })
+  const { s3, bucket } = createS3Client()
 
   // 1. Source must exist; destination must be free (no silent overwrites).
   let sourceHead
