@@ -2,6 +2,7 @@ import { DeleteObjectsCommand, HeadObjectCommand, S3Client } from '@aws-sdk/clie
 import { VideoMeta } from '~~/server/models/VideoMeta'
 import { videoProgress } from '~~/server/models/VideoProgress'
 import { requireAdmin } from '~~/server/utils/authz'
+import { VIDEO_EXT } from '~~/shared/utils/videoExt'
 
 // Admin-only: permanently delete a video, its thumbnail, and its MongoDB rows.
 // Body: { key: string }
@@ -11,8 +12,6 @@ import { requireAdmin } from '~~/server/utils/authz'
 // role. S3 is the source of truth for the library, so the object delete is the
 // only step allowed to fail the request; leftover Mongo rows are keyed by
 // s3Key and simply never match anything again, so they degrade to warnings.
-
-const VIDEO_EXT = /\.(mp4|mov|m4v|mkv|webm|avi)$/i
 
 function isNotFound(err: any): boolean {
   return (
