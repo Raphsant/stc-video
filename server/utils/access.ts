@@ -24,10 +24,14 @@ export type LockReason = 'no-group' | 'folder' | 'window'
 
 // A folder restriction: any S3 key under `prefix` is denied for groups
 // mapped to false. Nested rules combine as AND (every matching rule must
-// allow the group).
+// allow the group). `noWindow` is the opposite lever: it exempts the whole
+// subtree from the per-tier time window (e.g. "Sesiones esenciales" stays
+// watchable forever for both tiers). Exemptions OR together — one matching
+// exempt ancestor is enough.
 export interface FolderRule {
   prefix: string
   allowed: Record<AccessGroup, boolean>
+  noWindow?: boolean
 }
 
 export interface AccessRules {
@@ -70,15 +74,16 @@ export function checkVideoAccess(opts: {
 
   if (!group) return { allowed: false, reason: 'no-group' }
 
-  // 1. Folder restrictions
+  // 1. Folder restrictions (and window exemptions, collected in the same pass)
+  let windowExempt = false
   for (const rule of rules.folderRules) {
-    if (key.startsWith(rule.prefix) && !rule.allowed[group]) {
-      return { allowed: false, reason: 'folder' }
-    }
+    if (!key.startsWith(rule.prefix)) continue
+    if (!rule.allowed[group]) return { allowed: false, reason: 'folder' }
+    if (rule.noWindow) windowExempt = true
   }
 
-  // 2. Time window
-  const daysBack = rules.windows[group]
+  // 2. Time window (skipped for always-available folders)
+  const daysBack = windowExempt ? null : rules.windows[group]
   if (daysBack != null) {
     if (opts.uploadedAt == null) return { allowed: false, reason: 'window' }
     const cutoff = now - daysBack * DAY_MS

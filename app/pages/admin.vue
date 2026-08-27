@@ -15,7 +15,7 @@ useSeoMeta({ title: 'Administración' })
 const toast = useToast()
 
 type Tier = 'alpha' | 'delta'
-type RuleMap = Record<string, { alpha: boolean; delta: boolean }>
+type RuleMap = Record<string, { alpha: boolean; delta: boolean; noWindow: boolean }>
 
 const { data: config } = await useFetch('/api/admin/access')
 const {
@@ -32,12 +32,12 @@ const rulesMap = ref<RuleMap>({})
 interface AccessConfigShape {
   alphaDaysBack?: number | null
   deltaDaysBack?: number | null
-  folderRules?: { prefix: string; alpha: boolean; delta: boolean }[]
+  folderRules?: { prefix: string; alpha: boolean; delta: boolean; noWindow?: boolean }[]
 }
 
 function stateFromConfig(c: AccessConfigShape | null | undefined) {
   const map: RuleMap = {}
-  for (const r of c?.folderRules ?? []) map[r.prefix] = { alpha: r.alpha, delta: r.delta }
+  for (const r of c?.folderRules ?? []) map[r.prefix] = { alpha: r.alpha, delta: r.delta, noWindow: r.noWindow === true }
   return { alpha: c?.alphaDaysBack ?? null, delta: c?.deltaDaysBack ?? null, rules: map }
 }
 
@@ -184,19 +184,43 @@ function isChecked(prefix: string, tier: Tier): boolean {
   return !ancestorBlocked(prefix, tier) && (rulesMap.value[prefix]?.[tier] ?? true)
 }
 
-function toggleRule(prefix: string, tier: Tier) {
-  if (ancestorBlocked(prefix, tier)) return
-  const cur = rulesMap.value[prefix] ?? { alpha: true, delta: true }
-  const next = { ...cur, [tier]: !cur[tier] }
+function setRule(prefix: string, next: RuleMap[string]) {
   const map = { ...rulesMap.value }
-  if (next.alpha && next.delta) delete map[prefix]
+  if (next.alpha && next.delta && !next.noWindow) delete map[prefix]
   else map[prefix] = next
   rulesMap.value = map
 }
 
-function rowBadge(prefix: string): { label: string; color: 'error' | 'warning' } | null {
+function toggleRule(prefix: string, tier: Tier) {
+  if (ancestorBlocked(prefix, tier)) return
+  const cur = rulesMap.value[prefix] ?? { alpha: true, delta: true, noWindow: false }
+  setRule(prefix, { ...cur, [tier]: !cur[tier] })
+}
+
+// Window exemptions inherit downward with OR semantics (matching the server:
+// one exempt ancestor is enough), so a subfolder of an exempt folder shows a
+// checked, disabled box.
+function ancestorExempt(prefix: string): boolean {
+  for (const [p, r] of Object.entries(rulesMap.value)) {
+    if (p !== prefix && prefix.startsWith(p) && r.noWindow) return true
+  }
+  return false
+}
+
+function isExempt(prefix: string): boolean {
+  return ancestorExempt(prefix) || (rulesMap.value[prefix]?.noWindow ?? false)
+}
+
+function toggleNoWindow(prefix: string) {
+  if (ancestorExempt(prefix)) return
+  const cur = rulesMap.value[prefix] ?? { alpha: true, delta: true, noWindow: false }
+  setRule(prefix, { ...cur, noWindow: !cur.noWindow })
+}
+
+function rowBadge(prefix: string): { label: string; color: 'error' | 'warning' | 'success' } | null {
   if (!isChecked(prefix, 'alpha')) return { label: 'Oculta para todos', color: 'error' }
   if (!isChecked(prefix, 'delta')) return { label: 'Solo Alpha', color: 'warning' }
+  if (isExempt(prefix)) return { label: 'Siempre disponible', color: 'success' }
   return null
 }
 
@@ -342,10 +366,11 @@ function discard() {
 
       <div class="overflow-hidden rounded-xl border border-hair bg-card">
         <!-- Column headers -->
-        <div class="grid grid-cols-[1fr_72px_72px] items-center gap-2 border-b border-hair bg-raised px-4 py-3 text-[10px] font-semibold uppercase tracking-[0.18em] text-ash">
+        <div class="grid grid-cols-[1fr_72px_72px_88px] items-center gap-2 border-b border-hair bg-raised px-4 py-3 text-[10px] font-semibold uppercase tracking-[0.18em] text-ash">
           <span>Carpeta</span>
           <span class="text-center">Alpha</span>
           <span class="text-center">Delta</span>
+          <span class="text-center" title="Exenta de la ventana de tiempo: siempre disponible">Sin límite</span>
         </div>
 
         <div v-if="foldersPending" class="space-y-2 p-4">
@@ -361,7 +386,7 @@ function discard() {
           <div
             v-for="node in visibleRows"
             :key="node.prefix"
-            class="grid grid-cols-[1fr_72px_72px] items-center gap-2 px-4 py-2.5 transition hover:bg-raised"
+            class="grid grid-cols-[1fr_72px_72px_88px] items-center gap-2 px-4 py-2.5 transition hover:bg-raised"
           >
             <div class="flex min-w-0 items-center gap-1.5" :style="{ paddingLeft: `${node.depth * 1.25}rem` }">
               <UButton
@@ -380,9 +405,11 @@ function discard() {
               <span
                 v-if="rowBadge(node.prefix)"
                 class="ml-1 shrink-0 rounded border px-2 py-0.5 text-[9px] font-semibold uppercase tracking-[0.14em]"
-                :class="rowBadge(node.prefix)!.color === 'error'
-                  ? 'border-red-900/60 bg-red-950/40 text-red-400'
-                  : 'border-gold-dim bg-gold-bg text-gold'"
+                :class="{
+                  'border-red-900/60 bg-red-950/40 text-red-400': rowBadge(node.prefix)!.color === 'error',
+                  'border-gold-dim bg-gold-bg text-gold': rowBadge(node.prefix)!.color === 'warning',
+                  'border-emerald-900/60 bg-emerald-950/40 text-emerald-400': rowBadge(node.prefix)!.color === 'success',
+                }"
               >{{ rowBadge(node.prefix)!.label }}</span>
             </div>
             <div
@@ -405,6 +432,16 @@ function discard() {
                 @update:model-value="toggleRule(node.prefix, 'delta')"
               />
             </div>
+            <div
+              class="flex justify-center"
+              :title="ancestorExempt(node.prefix) ? 'Exenta por una carpeta superior' : 'Siempre disponible: sin ventana de tiempo'"
+            >
+              <UCheckbox
+                :model-value="isExempt(node.prefix)"
+                :disabled="ancestorExempt(node.prefix)"
+                @update:model-value="toggleNoWindow(node.prefix)"
+              />
+            </div>
           </div>
 
           <p v-if="!visibleRows.length" class="px-4 py-10 text-center text-sm text-ash">
@@ -416,6 +453,7 @@ function discard() {
       <div class="mt-3 space-y-1 text-xs text-ash">
         <p>Desmarcar una casilla oculta la carpeta (y todo su contenido) para ese rol. Las reglas de una carpeta se heredan a sus subcarpetas.</p>
         <p>Los miembros Delta ven las carpetas exclusivas como contenido bloqueado con aviso de "Solo Alpha". Quitar Alpha oculta la carpeta para todos, incluido el staff.</p>
+        <p>Marcar "Sin límite" exime a la carpeta (y a sus subcarpetas) de la ventana de tiempo: sus videos quedan siempre disponibles para los roles que pueden verla.</p>
       </div>
     </section>
 

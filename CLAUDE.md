@@ -49,6 +49,7 @@ stc-video/
 ├── revisiones/{year}/{Mes año}/                 # Revisiones de Trades
 ├── Q&A/{year}/{Mes año}/                        # Q&A sessions
 ├── Sesion de progreso/{year}/{Mes año}/         # Sesion de Progreso
+├── Sesiones esenciales/                         # Evergreen content — always available to alpha AND delta (noWindow rule)
 └── otros/{year}/{Mes año}/                      # Outside scheduled hours
 ```
 
@@ -84,6 +85,7 @@ Access logic lives in `server/utils/access.ts` (`checkVideoAccess`). The rules t
   deltaDaysBack: 30,
   folderRules: [              // only non-default entries stored
     { prefix: 'Live/', alpha: true, delta: false },  // e.g. delta blocked
+    { prefix: 'Sesiones esenciales/', alpha: true, delta: true, noWindow: true },  // always available
   ],
 }
 ```
@@ -92,7 +94,7 @@ Endpoints load rules once per request via `getAccessRules()` (`server/utils/acce
 
 Two checks happen on every video request:
 1. **Folder restriction** — a key is denied for a group when ANY `folderRules` prefix matching it has that group set to false (nested rules AND together; a child can't re-allow what an ancestor blocks).
-2. **Time window** — is the video within the tier's `daysBack` range (measured against `uploadedAt`)?
+2. **Time window** — is the video within the tier's `daysBack` range (measured against `uploadedAt`)? A rule with `noWindow: true` exempts its whole subtree from this check for every tier (exemptions OR together — one matching exempt ancestor is enough). This powers always-available folders like `Sesiones esenciales/`.
 
 **Critical:** access is enforced server-side at the signed URL endpoint (`/api/videos/[key]/url`). The list endpoint may show locked content with `locked: true` and `url: null` to enable upsell UI.
 

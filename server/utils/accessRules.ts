@@ -31,6 +31,7 @@ export async function getAccessRules(): Promise<AccessRules> {
           folderRules: (doc.folderRules ?? []).map((r: any) => ({
             prefix: String(r.prefix),
             allowed: { alpha: r.alpha !== false, delta: r.delta !== false },
+            noWindow: r.noWindow === true,
           })),
         }
       : DEFAULT_ACCESS_RULES

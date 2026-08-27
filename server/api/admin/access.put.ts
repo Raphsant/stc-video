@@ -4,9 +4,10 @@ import { AccessConfig } from '~~/server/models/AccessConfig'
 // Body: {
 //   alphaDaysBack: number | null,   // null = unlimited
 //   deltaDaysBack: number | null,
-//   folderRules: { prefix: string, alpha: boolean, delta: boolean }[]
+//   folderRules: { prefix: string, alpha: boolean, delta: boolean, noWindow?: boolean }[]
 // }
-// Only meaningful rules are persisted (both-allowed entries are dropped).
+// Only meaningful rules are persisted (entries with both tiers allowed and
+// no time-window exemption are dropped).
 
 const MAX_RULES = 200
 const MAX_PREFIX_LENGTH = 512
@@ -60,17 +61,19 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 400, message: `Demasiadas reglas de carpeta (máx. ${MAX_RULES})` })
   }
 
-  // Dedupe by prefix (last wins) and drop no-op rules where both are allowed.
-  const byPrefix = new Map<string, { prefix: string; alpha: boolean; delta: boolean }>()
+  // Dedupe by prefix (last wins) and drop no-op rules where both tiers are
+  // allowed and there is no time-window exemption.
+  const byPrefix = new Map<string, { prefix: string; alpha: boolean; delta: boolean; noWindow: boolean }>()
   for (const raw of rawRules as any[]) {
     const prefix = parsePrefix(raw?.prefix)
     const alpha = raw?.alpha !== false
     const delta = raw?.delta !== false
-    if (alpha && delta) {
+    const noWindow = raw?.noWindow === true
+    if (alpha && delta && !noWindow) {
       byPrefix.delete(prefix)
       continue
     }
-    byPrefix.set(prefix, { prefix, alpha, delta })
+    byPrefix.set(prefix, { prefix, alpha, delta, noWindow })
   }
   const folderRules = Array.from(byPrefix.values()).sort((a, b) => a.prefix.localeCompare(b.prefix, 'es'))
 

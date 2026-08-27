@@ -22,14 +22,17 @@ export const AccessConfig = defineMongooseModel({
       default: 30,
     },
     // Folder restrictions: an S3 key is denied for a group when ANY rule
-    // whose prefix matches it has that group set to false. Only non-default
-    // entries are stored (a folder with both groups allowed has no rule).
+    // whose prefix matches it has that group set to false. `noWindow: true`
+    // exempts the subtree from the time window (always available). Only
+    // non-default entries are stored (a folder with both groups allowed and
+    // no exemption has no rule).
     folderRules: {
       type: [
         {
           prefix: { type: String, required: true },
           alpha: { type: Boolean, default: true },
           delta: { type: Boolean, default: true },
+          noWindow: { type: Boolean, default: false },
         },
       ],
       default: [],

@@ -16,7 +16,7 @@ export default defineEventHandler(async (event) => {
     return {
       alphaDaysBack: DEFAULT_ACCESS_RULES.windows.alpha,
       deltaDaysBack: DEFAULT_ACCESS_RULES.windows.delta,
-      folderRules: [] as { prefix: string; alpha: boolean; delta: boolean }[],
+      folderRules: [] as { prefix: string; alpha: boolean; delta: boolean; noWindow: boolean }[],
     }
   }
 
@@ -27,6 +27,7 @@ export default defineEventHandler(async (event) => {
       prefix: String(r.prefix),
       alpha: r.alpha !== false,
       delta: r.delta !== false,
+      noWindow: r.noWindow === true,
     })),
   }
 })
